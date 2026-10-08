@@ -1,0 +1,23 @@
+{
+  "name": "attendance-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "parcel src/index.html --port 1234",
+    "build": "parcel build src/index.html --dist-dir dist"
+  },
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-router-dom": "^7.0.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.0.0",
+    "parcel": "^2.13.0",
+    "tailwindcss": "^4.0.0"
+  },
+  "@parcel/resolver-default": {
+    "packageExports": true
+  }
+}

@@ -22,11 +22,11 @@ A clickable HTML prototype was built first to agree on flows. The real app is be
 | Frontend | React 19, Tailwind CSS 4, Parcel 2, react-router-dom 7 |
 | Backend | FastAPI, Uvicorn, SQLModel, SQLAlchemy 2, Pydantic 2, pydantic-settings, PyJWT, bcrypt, psycopg 3 (binary), Alembic, email-validator, tzdata |
 | Dev tools | pytest, httpx, ruff |
-| Database | PostgreSQL (Neon or Supabase), one database per environment |
-| Hosting | Vercel: two projects (frontend root `frontend/`, backend root `backend/`) |
+| Database | PostgreSQL on Supabase: **one shared project** for local dev and production (see safeguards below) |
+| Hosting | Vercel: **one multi-service project** (`vercel.json` at repo root). Frontend at `/`, backend at `/api`, same domain |
 | Tracking | Jira (epics and stories), GitHub |
 
-Dependency versions are pinned in `backend/requirements.txt` and `frontend/package.json`.
+Backend dependencies are managed with **uv** (`backend/pyproject.toml` + `backend/uv.lock`, Python 3.12 via `backend/.python-version`). Frontend versions are pinned in `frontend/package.json`.
 
 ### Known setup gotchas
 
@@ -35,6 +35,8 @@ Dependency versions are pinned in `backend/requirements.txt` and `frontend/packa
 3. Parcel inlines `process.env.API_URL` at build time; restart dev server after changing `.env`.
 4. Alembic folder is a placeholder; can be regenerated with `alembic init alembic`. Use the psycopg 3 URL prefix `postgresql+psycopg://`.
 5. Vercel FastAPI entrypoint: `backend/index.py` exposing `app`.
+6. `vercel.json` rewrites: `/api/(.*)` must stay **before** the catch-all `/(.*)` (first match wins). To verify on first deploy: whether FastAPI receives `/api/health` or `/health` (decides `prefix="/api"` on routers), and whether reloading a react-router path like `/hr` returns 404 (would need an SPA fallback).
+7. Local dev mirrors production with a Parcel proxy: `frontend/.proxyrc` forwards `/api` to `http://localhost:8000`, so the browser sees one origin and cookies behave as in production.
 
 ## Project structure
 
@@ -43,22 +45,23 @@ All code files currently exist as **empty placeholders** (I am writing them).
 ```
 attendance-app/
 ├── CLAUDE.md
+├── vercel.json                    # multi-service: backend at /api, frontend at /
 ├── docs/schema.md                 # database schema (source of truth)
-├── .github/workflows/ci.yml       # lint + tests + build on PRs to dev/qa/main
+├── .github/workflows/ci.yml       # lint + tests + build on PRs to dev/main
 ├── .github/pull_request_template.md
 ├── backend/
-│   ├── requirements.txt, requirements-dev.txt, pyproject.toml, .env.example
+│   ├── pyproject.toml, uv.lock, .python-version, requirements*.txt, .env.example
 │   ├── index.py                   # Vercel entrypoint
 │   ├── alembic.ini, alembic/ (env.py, script.py.mako, versions/)
 │   ├── app/
 │   │   ├── main.py                # FastAPI app, CORS, routers
 │   │   ├── core/                  # config.py, database.py, security.py, deps.py, time.py
 │   │   ├── models/                # enums.py, user.py, attendance.py, request.py, holiday.py
-│   │   └── api/routes/            # health.py, auth.py (more per epic)
+│   │   └── api/routes/            # health.py, auth.py (more per epic), all under /api
 │   ├── scripts/seed.py            # HR admin, team, holidays
 │   └── tests/                     # conftest.py, test_health.py, test_auth.py, test_time.py
 └── frontend/
-    ├── package.json, .env.example (API_URL)
+    ├── package.json, .env.example (API_URL=/api), .postcssrc, .proxyrc
     └── src/
         ├── index.html, main.jsx, App.jsx, styles.css
         ├── lib/api.js             # fetch wrapper, credentials: "include"
@@ -107,9 +110,9 @@ Design decisions:
 
 - Email + password. Passwords hashed with bcrypt.
 - JWT (PyJWT, HS256) in an **httpOnly cookie**; frontend uses `credentials: "include"`. Bearer header fallback for tests/tools.
-- Endpoints planned: POST /auth/login, POST /auth/logout, GET /auth/me.
+- Endpoints planned: POST /api/auth/login, POST /api/auth/logout, GET /api/auth/me.
 - JWT_SECRET must be 32+ random chars outside local.
-- Cookies across two different `*.vercel.app` domains get blocked by browsers. Plan: custom domains on one parent (app.company.com + api.company.com), COOKIE_DOMAIN=.company.com, SameSite=lax, Secure=true.
+- Frontend and backend share one domain (Vercel services), so the auth cookie is first-party: no custom domain needed, `COOKIE_DOMAIN` stays empty, SameSite=lax, Secure=true in production. No CORS needed in production (same origin); `CORS_ORIGINS` only matters for local tools.
 
 ## Features (from the prototype)
 
@@ -133,11 +136,16 @@ Visual direction: navy `#1F4E79` header and sky `#DDEBF7` sub-header (from the o
 
 ## Git, CI/CD and deployment
 
-- Branches: `feature/ATT-<n>-short-name` → `dev` → `qa` → `main` (production, linked to Vercel).
-- PRs required into dev/qa/main; CI must pass; 1+ approval. Hotfix from main, then merge main back into qa and dev.
+- **One deployed environment** (production). No qa environment.
+- Branches: `feature/ATT-<n>-short-name` → `dev` (integration) → `main` (production, linked to Vercel). A PR `dev` → `main` is a release.
+- PRs required into dev/main; CI must pass. Approvals: 0 while working solo (GitHub blocks approving your own PR), 1+ once a second developer joins. Hotfix from main, then merge main back into dev.
 - CI (GitHub Actions): backend `ruff check .` + `pytest`; frontend `npm ci` + `npm run build`.
-- Vercel: production branch `main`; `dev` and `qa` get branch domains + branch-specific env vars (Pro plan allows one custom environment, e.g. qa). Separate DB per environment.
-- Run `alembic upgrade head` per environment on merge (GitHub Actions with DB URL secrets).
+- Vercel: one multi-service project, production branch `main` only. Preview deploys for other branches disabled via Ignored Build Step. One set of env vars (`ENVIRONMENT=production`, transaction pooler `DATABASE_URL` on port 6543, own `JWT_SECRET`, `COOKIE_SECURE=true`, `API_URL=/api`).
+- Database: one shared Supabase project used by local dev and production. Safeguards:
+  1. pytest must **never** connect to Supabase; tests use their own DB, and `conftest.py` refuses to run if `DATABASE_URL` contains `supabase.com`.
+  2. `pg_dump` backup before every `alembic upgrade head` (free plan has no self-serve restore). Backup files stay out of git.
+  3. Local test data uses seeded `test.*` users so it can be removed before go-live. After go-live, running locally means acting on real data.
+- Local dev and Alembic use the session pooler URL (port 5432).
 - Serverless limits on Vercel: no persistent disk, no always-on background tasks (use Vercel Cron for auto check-out / reminders), cold starts.
 - Include Jira key (ATT-12) in branch, commits and PR titles; GitHub for Jira app links them.
 
@@ -151,7 +159,8 @@ Suggested sprints: (1) epics 1 + 2, (2) epic 3, (3) epics 4, 5, 7, (4) epics 6 +
 
 ## Current status and next steps
 
-- Done: prototype, schema design (`docs/schema.md`), Jira backlog, empty project skeleton with dependencies.
-- Next (me): write SQLModel models from `docs/schema.md` (enums.py first), then config/database/security, Alembic initial migration, auth routes, then login page.
+- Done: prototype, schema design (`docs/schema.md`), Jira backlog, empty project skeleton with dependencies, Supabase project + `backend/.env`, `backend/.env.example`, `app/core/config.py`, uv setup.
+- In progress: git repo at the project root (not `backend/`), GitHub remote, `dev` + `main` branches.
+- Next (me): `database.py`, SQLModel models from `docs/schema.md` (enums.py first), security, Alembic initial migration, auth routes, then login page.
 - Ask Claude Code to: review each file as I finish it, explain issues, check models match `docs/schema.md`, and help write tests.
 

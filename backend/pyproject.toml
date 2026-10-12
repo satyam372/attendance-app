@@ -23,3 +23,7 @@ dev = [
     "pytest==9.1.1",
     "ruff==0.16.10",
 ]
+
+[tool.ruff]
+# Alembic writes these files; keep them as generated
+extend-exclude = ["alembic/versions"]

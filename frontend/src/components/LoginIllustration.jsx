@@ -1,5 +1,3 @@
-import clsx from "clsx";
-
 // Decorative artwork for the login screen (from the design canvas): a month card with
 // checked-in days, a clock, a location pin, a check-in badge and a floating status pill.
 // Colors come from theme tokens so it works in light and dark mode.
@@ -41,7 +39,7 @@ export function LoginIllustration({ className }) {
   const month = new Date().toLocaleDateString("en-IN", { month: "long", timeZone: "Asia/Kolkata" }).toUpperCase();
 
   return (
-    <svg className={clsx("h-auto w-full", className)} viewBox="0 0 340 250" fill="none" aria-hidden="true">
+    <svg className={className} viewBox="0 0 340 250" fill="none" aria-hidden="true">
       <defs>
         <linearGradient id="login-ill-ring" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0" stopColor="#D9CCFF" />

@@ -33,9 +33,9 @@ function validate(email, password) {
 }
 
 const DEMO_ACCOUNTS = [
-  { label: "HR", email: "hr@speedinnovations.in" },
-  { label: "Employee", email: "sandip@speedinnovations.in" },
-  { label: "Employee", email: "ankur@speedinnovations.in" },
+  { label: "HR", role: "HR", email: "hr@speedinnovations.in" },
+  { label: "Sandip", role: "Employee", email: "sandip@speedinnovations.in" },
+  { label: "Ankur", role: "Employee", email: "ankur@speedinnovations.in" },
 ];
 
 export default function Login() {
@@ -90,27 +90,27 @@ export default function Login() {
   return (
     <main
       className={clsx(
-        "bg-login relative flex min-h-dvh flex-col overflow-hidden text-ink",
+        "bg-login relative flex h-dvh flex-col overflow-hidden text-ink sm:h-auto sm:min-h-dvh",
         "sm:items-center sm:justify-center sm:px-5 sm:py-10",
         // Intro offsets: smaller lift and a full-height sheet slide on phones.
-        "[--lift-scale:1.12] [--lift-y:64px] [--sheet-y:105%] sm:[--lift-scale:1.35] sm:[--lift-y:118px] sm:[--sheet-y:48px]",
+        "[--lift-scale:1.12] [--lift-y:40px] [--sheet-y:105%] sm:[--lift-scale:1.35] sm:[--lift-y:118px] sm:[--sheet-y:48px]",
       )}
     >
-      <div className="flex w-full flex-1 flex-col sm:max-w-[460px] sm:flex-none sm:gap-5">
-        {/* Brand and illustration. Phones: illustration on top, brand at the bottom, in normal flow so they
-            never overlap. From sm up: fixed-height stage with the illustration behind the brand, as designed. */}
-        <div className="relative flex flex-1 flex-col items-center justify-between gap-6 px-6 pt-[max(48px,env(safe-area-inset-top))] pb-8 sm:h-[330px] sm:flex-none sm:justify-end sm:gap-0 sm:px-0 sm:pt-0 sm:pb-[22px]">
+      <div className="flex min-h-0 w-full flex-1 flex-col sm:max-w-[460px] sm:flex-none sm:gap-5">
+        {/* Brand and illustration. Phones: the top 40% of the screen, illustration scaled to fit above the
+            brand. From sm up: fixed-height stage with the illustration behind the brand, as designed. */}
+        <div className="relative flex h-[40dvh] shrink-0 flex-col items-center gap-3 px-6 pt-[max(16px,env(safe-area-inset-top))] pb-5 sm:h-[330px] sm:justify-end sm:gap-0 sm:px-0 sm:pt-0 sm:pb-[22px]">
           <div
             className={clsx(
-              "flex w-full justify-center sm:absolute sm:inset-x-0 sm:top-0",
+              "flex min-h-0 w-full flex-1 justify-center sm:absolute sm:inset-x-0 sm:top-0 sm:flex-none",
               intro("motion-safe:animate-intro-art"),
             )}
           >
-            <LoginIllustration className="max-w-[340px] sm:max-w-[380px]" />
+            <LoginIllustration className="h-full w-auto max-w-full sm:h-auto sm:w-full sm:max-w-[380px]" />
           </div>
           <div className={clsx("relative flex flex-col items-center gap-1.5", intro("motion-safe:animate-intro-lift"))}>
             <h1 className={clsx("m-0 leading-[1.15]", intro("motion-safe:animate-intro-appear"))}>
-              <Wordmark intro={playIntro} className="text-[34px] sm:text-[40px]" />
+              <Wordmark intro={playIntro} className="text-[30px] sm:text-[40px]" />
             </h1>
             <p className={clsx("m-0 text-[13px] tracking-[0.02em] text-ink-soft", intro("motion-safe:animate-intro-rise-0"))}>
               Attendance by Speed Innovations
@@ -118,28 +118,29 @@ export default function Login() {
           </div>
         </div>
 
-        {/* Sign-in card: a bottom sheet on phones, a floating card from sm up */}
+        {/* Sign-in card: a bottom sheet filling the remaining 60% on phones (scrolls inside only if it must),
+            a floating card from sm up */}
         <section
           aria-labelledby="login-heading"
           className={clsx(
-            "rounded-t-sheet border-t border-line bg-surface px-6 pt-[30px] pb-[calc(34px+env(safe-area-inset-bottom))]",
+            "min-h-0 flex-1 overflow-y-auto rounded-t-sheet border-t border-line bg-surface px-6 pt-6 pb-[max(16px,env(safe-area-inset-bottom))] short:pt-5",
             "shadow-[0_-24px_60px_rgb(46_29_92/0.1)] dark:shadow-[0_-24px_60px_rgb(0_0_0/0.35)]",
-            "sm:rounded-sheet sm:border sm:px-9 sm:pt-8 sm:pb-9",
+            "sm:flex-none sm:overflow-visible sm:rounded-sheet sm:border sm:px-9 sm:pt-8 sm:pb-9",
             "sm:shadow-[0_30px_80px_rgb(46_29_92/0.14)] sm:dark:shadow-[0_30px_80px_rgb(0_0_0/0.45)]",
             intro("motion-safe:animate-intro-sheet"),
           )}
         >
-          <form noValidate onSubmit={handleSubmit} className="flex flex-col gap-6">
-            <div className={clsx("flex flex-col gap-1.5", intro("motion-safe:animate-intro-rise-1"))}>
-              <h2 id="login-heading" className="m-0 text-[30px] leading-[1.15] font-semibold tracking-[-0.02em]">
+          <form noValidate onSubmit={handleSubmit} className="flex flex-col gap-5 short:gap-4 sm:gap-6">
+            <div className={clsx("flex flex-col gap-1 sm:gap-1.5", intro("motion-safe:animate-intro-rise-1"))}>
+              <h2 id="login-heading" className="m-0 text-[26px] leading-[1.15] font-semibold tracking-[-0.02em] short:text-2xl sm:text-[30px]">
                 Welcome
               </h2>
-              <p className="m-0 text-[15px] leading-normal text-ink-muted">Sign in with your work email and password.</p>
+              <p className="m-0 text-sm leading-normal text-ink-muted sm:text-[15px]">Sign in with your work email and password.</p>
             </div>
 
             <ErrorAlert>{formError}</ErrorAlert>
 
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-3.5 short:gap-3 sm:gap-4">
               <TextField
                 ref={emailRef}
                 className={intro("motion-safe:animate-intro-rise-2")}
@@ -150,6 +151,7 @@ export default function Login() {
                 autoCapitalize="none"
                 spellCheck={false}
                 placeholder="name@speedinnovations.in"
+                inputClassName="short:h-12"
                 value={email}
                 error={fieldErrors.email}
                 onChange={(event) => {
@@ -164,6 +166,7 @@ export default function Login() {
                 label="Password"
                 autoComplete="current-password"
                 placeholder="Enter your password"
+                inputClassName="short:h-12"
                 value={password}
                 error={fieldErrors.password}
                 onChange={(event) => {
@@ -173,25 +176,25 @@ export default function Login() {
               />
             </div>
 
-            <Button type="submit" size="lg" loading={submitting} className={clsx("w-full", intro("motion-safe:animate-intro-rise-4"))}>
+            <Button type="submit" size="lg" loading={submitting} className={clsx("w-full short:h-12", intro("motion-safe:animate-intro-rise-4"))}>
               {submitting ? "Signing in" : "Sign in"}
             </Button>
           </form>
 
           {USE_MOCK_API && (
-            <div className={clsx("mt-6 border-t border-line pt-5", intro("motion-safe:animate-intro-rise-4"))}>
-              <p className="m-0 mb-3 text-[13px] text-ink-muted">Demo accounts (mock API). Tap one to fill the form.</p>
+            <div className={clsx("mt-4 border-t border-line pt-3.5 short:mt-2.5 short:pt-2.5 sm:mt-6 sm:pt-5", intro("motion-safe:animate-intro-rise-4"))}>
+              <p className="m-0 mb-2 text-xs text-ink-muted short:hidden sm:mb-3 sm:text-[13px]">Demo accounts (mock API). Tap one to fill the form.</p>
               <div className="grid grid-cols-3 gap-2">
                 {DEMO_ACCOUNTS.map((account) => (
                   <button
                     key={account.email}
                     type="button"
                     onClick={() => fillDemo(account)}
-                    aria-label={`Use the ${account.label} demo account, ${account.email}`}
-                    className="min-h-11 cursor-pointer rounded-xl border border-line-strong bg-field px-3 py-2 text-left transition hover:border-focus"
+                    aria-label={`Use the ${account.label} demo account (${account.role}), ${account.email}`}
+                    className="flex min-h-11 cursor-pointer items-baseline justify-center gap-1.5 rounded-xl border border-line-strong bg-field px-2 py-2 transition hover:border-focus sm:flex-col sm:items-start sm:gap-0 sm:px-3"
                   >
-                    <span className="block text-[13px] font-semibold text-ink">{account.label}</span>
-                    <span className="block truncate text-xs text-ink-muted">{account.email.split("@")[0]}</span>
+                    <span className="text-[13px] font-semibold text-ink">{account.label}</span>
+                    <span className="hidden text-xs text-ink-muted sm:block">{account.role}</span>
                   </button>
                 ))}
               </div>

@@ -3,6 +3,9 @@
 /* Dark mode is class based: ThemeContext puts `dark` on <html>. */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Short viewports, e.g. phones with browser toolbars showing: used to fit the login without scrolling. */
+@custom-variant short (@media (max-height: 760px));
+
 /* ---------- Design tokens ----------
    Raw values live in CSS variables per theme (light on :root, dark on .dark).
    @theme inline maps them to Tailwind utilities: bg-canvas, text-ink, border-line, ... */

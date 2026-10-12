@@ -45,7 +45,7 @@ export function PasswordField(props) {
     <TextField
       {...props}
       type={visible ? "text" : "password"}
-      inputClassName="pr-13"
+      inputClassName={clsx("pr-13", props.inputClassName)}
       trailing={
         <button
           type="button"

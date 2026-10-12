@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "parcel src/index.html --port 1234",
+    "dev": "parcel src/index.html --port 1234 --dist-dir dist-dev",
     "build": "parcel build src/index.html --dist-dir dist",
     "test": "node --test \"src/lib/**/*.test.js\""
   },

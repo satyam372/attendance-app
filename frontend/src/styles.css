@@ -3,8 +3,8 @@
 /* Dark mode is class based: ThemeContext puts `dark` on <html>. */
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* Short viewports, e.g. phones with browser toolbars showing: used to fit the login without scrolling. */
-@custom-variant short (@media (max-height: 760px));
+/* Short viewports (small phones, or browser toolbars showing): compact login spacing so it fits without scrolling. */
+@custom-variant short (@media (max-height: 640px));
 
 /* ---------- Design tokens ----------
    Raw values live in CSS variables per theme (light on :root, dark on .dark).
@@ -175,7 +175,6 @@
   --animate-intro-lift: intro-lift 1.2s cubic-bezier(0.22, 1, 0.36, 1) 2.4s both;
   --animate-intro-art: intro-art 1.4s cubic-bezier(0.22, 1, 0.36, 1) 2.55s both;
   --animate-intro-sheet: intro-sheet 1.05s cubic-bezier(0.16, 1, 0.3, 1) 2.5s both;
-  --animate-intro-rise-0: intro-rise 0.8s cubic-bezier(0.22, 1, 0.36, 1) 3s both;
   --animate-intro-rise-1: intro-rise 0.8s cubic-bezier(0.22, 1, 0.36, 1) 3.1s both;
   --animate-intro-rise-2: intro-rise 0.8s cubic-bezier(0.22, 1, 0.36, 1) 3.2s both;
   --animate-intro-rise-3: intro-rise 0.8s cubic-bezier(0.22, 1, 0.36, 1) 3.3s both;

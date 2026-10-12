@@ -1,5 +1,5 @@
 // Decorative artwork for the login screen (from the design canvas): a month card with
-// checked-in days, a clock, a location pin, a check-in badge and a floating status pill.
+// checked-in days, a clock, a location pin and a check-in badge.
 // Colors come from theme tokens so it works in light and dark mode.
 
 const COLS = [132, 158, 184, 210, 236];
@@ -39,7 +39,7 @@ export function LoginIllustration({ className }) {
   const month = new Date().toLocaleDateString("en-IN", { month: "long", timeZone: "Asia/Kolkata" }).toUpperCase();
 
   return (
-    <svg className={className} viewBox="0 0 340 250" fill="none" aria-hidden="true">
+    <svg className={className} viewBox="0 22 340 210" fill="none" aria-hidden="true">
       <defs>
         <linearGradient id="login-ill-ring" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0" stopColor="#D9CCFF" />
@@ -107,15 +107,6 @@ export function LoginIllustration({ className }) {
         />
       </g>
 
-      {/* Status pill */}
-      <g className="motion-safe:animate-bob [transform-box:fill-box]">
-        <rect x="178" y="6" width="142" height="30" rx="15" className="fill-ill-pill stroke-ill-pill-stroke" />
-        <circle cx="194" cy="21" r="5" className="fill-success" />
-        <text x="206" y="25" className="fill-ink" fontSize="11.5" fontWeight="500">
-          Checked in · 09:12
-        </text>
-      </g>
-
       {/* Location pin */}
       <g className="motion-safe:animate-bob-slow [transform-box:fill-box]">
         <circle cx="40" cy="64" r="22" fill="url(#login-ill-glow-lavender)" />
@@ -126,7 +117,6 @@ export function LoginIllustration({ className }) {
       <circle cx="316" cy="92" r="2" className="fill-ill-star" />
       <circle cx="22" cy="168" r="1.6" className="fill-ill-star" />
       <circle cx="150" cy="226" r="1.8" className="fill-ill-star" />
-      <circle cx="62" cy="18" r="1.4" className="fill-ill-star" />
     </svg>
   );
 }

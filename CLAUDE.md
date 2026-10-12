@@ -143,7 +143,7 @@ Design decisions:
 - Holidays: add/remove, upcoming/past.
 - Team: list, add employee (temporary password).
 
-Visual direction: new "SpeedIn" design (replaces the prototype's navy/sky look). Rubik font, deep purple palette, light and dark themes. Tokens live in `frontend/src/styles.css`.
+Visual direction: new "SpeedIn" design (replaces the prototype's navy/sky look). Rubik for UI text, Michroma for the speed-lines logo, deep purple palette, light and dark themes. Tokens live in `frontend/src/styles.css`.
 
 ## Git, CI/CD and deployment
 

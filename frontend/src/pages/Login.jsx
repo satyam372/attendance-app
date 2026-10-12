@@ -93,7 +93,7 @@ export default function Login() {
         "bg-login relative flex h-dvh flex-col overflow-hidden text-ink sm:h-auto sm:min-h-dvh",
         "sm:items-center sm:justify-center sm:px-5 sm:py-10",
         // Intro offsets: smaller lift and a full-height sheet slide on phones.
-        "[--lift-scale:1.12] [--lift-y:40px] [--sheet-y:105%] sm:[--lift-scale:1.35] sm:[--lift-y:118px] sm:[--sheet-y:48px]",
+        "[--lift-scale:1.08] [--lift-y:40px] [--sheet-y:105%] sm:[--lift-scale:1.25] sm:[--lift-y:118px] sm:[--sheet-y:48px]",
       )}
     >
       <div className="flex min-h-0 w-full flex-1 flex-col sm:max-w-[460px] sm:flex-none sm:gap-5">
@@ -109,8 +109,8 @@ export default function Login() {
             <LoginIllustration className="h-full w-auto max-w-full sm:h-auto sm:w-full sm:max-w-[380px]" />
           </div>
           <div className={clsx("relative flex flex-col items-center gap-1.5", intro("motion-safe:animate-intro-lift"))}>
-            <h1 className={clsx("m-0 leading-[1.15]", intro("motion-safe:animate-intro-appear"))}>
-              <Wordmark intro={playIntro} className="text-[30px] sm:text-[40px]" />
+            <h1 className={clsx("m-0 flex leading-none", intro("motion-safe:animate-intro-appear"))}>
+              <Wordmark intro={playIntro} className="text-[26px] sm:text-[34px]" />
             </h1>
             <p className={clsx("m-0 text-[13px] tracking-[0.02em] text-ink-soft", intro("motion-safe:animate-intro-rise-0"))}>
               Attendance by Speed Innovations

@@ -37,7 +37,7 @@ export function AppHeader() {
     <header className="sticky top-0 z-20 border-b border-line bg-surface/85 pt-[env(safe-area-inset-top)] backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-2 px-4 sm:gap-3 sm:px-6">
         <NavLink to="/" aria-label="SpeedIn home" className="rounded-lg">
-          <Wordmark className="text-[22px]" />
+          <Wordmark className="text-base sm:text-lg" />
         </NavLink>
 
         <nav aria-label="Main" className="flex items-center gap-1 sm:ml-6">

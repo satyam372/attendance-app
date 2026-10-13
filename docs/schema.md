@@ -36,6 +36,7 @@ erDiagram
     datetime out_time "UTC, nullable"
     uuid request_id FK "nullable"
     uuid updated_by_id FK "nullable"
+    datetime created_at
     datetime updated_at
   }
   REQUEST {
@@ -58,6 +59,8 @@ erDiagram
     string name
     date holiday_date UK
     bool is_optional
+    datetime created_at
+    datetime updated_at
   }
 ```
 
@@ -94,7 +97,8 @@ One row per employee per day. Records what actually happened.
 | out_time | datetime (UTC) | nullable; must be after in_time |
 | request_id | uuid → request.id | nullable; the approved request that set this day |
 | updated_by_id | uuid → employee.id | nullable; last person who edited (e.g. HR correction) |
-| updated_at | datetime (UTC) | set on insert and update |
+| created_at | datetime (UTC) | set on insert (database default) |
+| updated_at | datetime (UTC) | set on insert and on every ORM update |
 
 Not stored: **is_late** is calculated from `in_time` (late after OFFICE_START + LATE_BUFFER_MIN, i.e. 11:00 Asia/Kolkata).
 
@@ -124,7 +128,9 @@ What was asked for and the decision. Covers leave and WFH.
 | id | uuid | primary key, generated in Python (uuid4) |
 | name | string | required |
 | holiday_date | date | unique |
-| is_optional | bool | optional holidays are taken through a request |
+| is_optional | bool | default false; optional holidays are taken through a request |
+| created_at | datetime (UTC) | set on insert (database default) |
+| updated_at | datetime (UTC) | set on insert and on every ORM update |
 
 ## Enums
 

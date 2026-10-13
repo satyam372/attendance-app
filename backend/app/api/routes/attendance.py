@@ -1,9 +1,12 @@
-from fastapi import APIRouter, HTTPException, status
+from typing import Annotated
+
+from fastapi import APIRouter, HTTPException, Query, status
 
 from app.core.database import SessionDep
 from app.core.deps import CurrentUserDep
+from app.core.time import office_today
 from app.models.attendance import AttendancePublic
-from app.schemas.attendance import CheckInRequest, TodayStatus
+from app.schemas.attendance import AttendanceDay, CheckInRequest, TodayStatus
 from app.services.attendance import (
     AlreadyCheckedInError,
     AlreadyCheckedOutError,
@@ -13,6 +16,7 @@ from app.services.attendance import (
     WfhLimitReachedError,
     check_in,
     check_out,
+    get_month_history,
     get_today_status,
     to_public,
 )
@@ -61,3 +65,15 @@ def check_out_route(session: SessionDep, current_user: CurrentUserDep) -> Attend
     except AttendanceError as error:
         raise _conflict(error) from None
     return to_public(session, row)
+
+
+@router.get("/history")
+def history(
+    session: SessionDep,
+    current_user: CurrentUserDep,
+    year: Annotated[int | None, Query(ge=2000, le=2100)] = None,
+    month: Annotated[int | None, Query(ge=1, le=12)] = None,
+) -> list[AttendanceDay]:
+    """The logged-in employee's days for one month, newest first. Defaults to this month."""
+    today = office_today()
+    return get_month_history(session, current_user, year or today.year, month or today.month)

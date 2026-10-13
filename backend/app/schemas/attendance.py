@@ -1,13 +1,13 @@
 """Attendance request/response shapes that are not built from the table's Base.
 (AttendancePublic and AttendanceUpdate live next to the table in models/attendance.py.)"""
 
-from datetime import date
+from datetime import date, datetime
 
 from pydantic import field_validator
 from sqlmodel import SQLModel
 
 from app.models.attendance import AttendancePublic
-from app.models.enums import WorkMode
+from app.models.enums import DayStatus, Punctuality, WorkMode
 
 
 class CheckInRequest(SQLModel):
@@ -32,3 +32,16 @@ class TodayStatus(SQLModel):
     wfh_used: float  # this month, working days only
     wfh_free: int  # WFH_FREE_DAYS_PER_MONTH, so the frontend does not hard-code 2
     is_working_day: bool  # False on weekends and holidays (holiday banner, no late tag)
+
+
+class AttendanceDay(SQLModel):
+    """One calendar day in the history table. Built per day, not per row: absent days and
+    holidays have no attendance row but still appear."""
+
+    work_date: date
+    status: DayStatus
+    holiday_name: str | None = None  # set when the day is a holiday
+    in_time: datetime | None = None  # UTC; the frontend shows it in local time
+    out_time: datetime | None = None
+    worked_minutes: int | None = None  # out - in, when both exist ("Hours" column)
+    punctuality: Punctuality | None = None  # None on weekends, holidays and leave days

@@ -10,12 +10,13 @@ from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
 
 from app.core.config import get_settings
-from app.core.time import is_late, is_weekend, to_office_time
+from app.core.time import is_late, is_weekend, punctuality, to_office_time
 from app.models.attendance import Attendance, AttendancePublic
-from app.models.enums import LeavePortion, WorkMode
+from app.models.enums import DayStatus, LeavePortion, WorkMode
+from app.models.holiday import Holiday
 from app.models.user import Employee
-from app.schemas.attendance import TodayStatus
-from app.services.holiday import holiday_dates_between, is_working_day
+from app.schemas.attendance import AttendanceDay, TodayStatus
+from app.services.holiday import holiday_dates_between, holidays_between, is_working_day
 
 
 class AttendanceError(Exception):
@@ -161,6 +162,78 @@ def get_today_status(session: Session, employee: Employee, now: datetime | None 
         wfh_free=get_settings().wfh_free_days_per_month,
         is_working_day=is_working_day(session, today),
     )
+
+
+def _day_status(row: Attendance | None, holiday: Holiday | None, day: date, today: date) -> DayStatus:
+    if row is not None:
+        if row.leave_portion == LeavePortion.FULL:
+            return DayStatus.LEAVE
+        if row.leave_portion == LeavePortion.HALF:
+            return DayStatus.HALF_DAY_LEAVE
+        if row.work_mode is not None:
+            return DayStatus(row.work_mode.value)  # OFFICE, WFH or HYBRID
+    if holiday is not None:
+        return DayStatus.HOLIDAY
+    return DayStatus.NOT_CHECKED_IN if day == today else DayStatus.ABSENT
+
+
+def get_month_history(
+    session: Session, employee: Employee, year: int, month: int, now: datetime | None = None
+) -> list[AttendanceDay]:
+    """One entry per day of the month up to today, newest first.
+
+    Weekends appear only if the employee worked; holidays always appear. Days before the
+    employee was created are left out, so a new joiner is not shown as absent.
+    """
+    today = to_office_time(_now(now)).date()
+    start, end = _month_bounds(year, month)
+    joined = to_office_time(employee.created_at).date() if employee.created_at else start
+    first = max(start, joined)
+    last = min(end - timedelta(days=1), today)
+    if first > last:
+        return []
+
+    rows = session.exec(
+        select(Attendance).where(
+            Attendance.employee_id == employee.id,
+            Attendance.work_date >= first,
+            Attendance.work_date <= last,
+        )
+    ).all()
+    rows_by_date = {row.work_date: row for row in rows}
+    holidays = holidays_between(session, first, last + timedelta(days=1))
+
+    days: list[AttendanceDay] = []
+    day = last
+    while day >= first:
+        row = rows_by_date.get(day)
+        holiday = holidays.get(day)
+        if row is None and is_weekend(day):
+            day -= timedelta(days=1)
+            continue
+
+        working_day = not is_weekend(day) and holiday is None
+        in_time = row.in_time if row else None
+        out_time = row.out_time if row else None
+        days.append(
+            AttendanceDay(
+                work_date=day,
+                status=_day_status(row, holiday, day, today),
+                holiday_name=holiday.name if holiday else None,
+                in_time=in_time,
+                out_time=out_time,
+                worked_minutes=int((out_time - in_time).total_seconds() // 60)
+                if in_time and out_time
+                else None,
+                punctuality=punctuality(
+                    in_time,
+                    row.leave_portion if row else LeavePortion.NONE,
+                    working_day=working_day,
+                ),
+            )
+        )
+        day -= timedelta(days=1)
+    return days
 
 
 def to_public(session: Session, row: Attendance) -> AttendancePublic:

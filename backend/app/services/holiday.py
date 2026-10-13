@@ -34,12 +34,17 @@ def create_holiday(session: Session, data: HolidayCreate) -> Holiday:
     return holiday
 
 
-def holiday_dates_between(session: Session, start: date, end: date) -> set[date]:
-    """Holiday dates in [start, end). One query, so callers can check many days cheaply."""
+def holidays_between(session: Session, start: date, end: date) -> dict[date, Holiday]:
+    """Holidays in [start, end), keyed by date. One query, so callers can check many days."""
     rows = session.exec(
-        select(Holiday.holiday_date).where(Holiday.holiday_date >= start, Holiday.holiday_date < end)
+        select(Holiday).where(Holiday.holiday_date >= start, Holiday.holiday_date < end)
     ).all()
-    return set(rows)
+    return {holiday.holiday_date: holiday for holiday in rows}
+
+
+def holiday_dates_between(session: Session, start: date, end: date) -> set[date]:
+    """Holiday dates in [start, end)."""
+    return set(holidays_between(session, start, end))
 
 
 def is_working_day(session: Session, day: date) -> bool:

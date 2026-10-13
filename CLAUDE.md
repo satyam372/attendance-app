@@ -101,6 +101,7 @@ Design decisions:
 - Leave always needs approval. Show note: apply at least 1 day in advance (not hard-enforced yet; idea: block same-day for Casual/Earned, allow Sick).
 - Half-day counts: half leave + half office/WFH count 0.5 each side in all totals.
 - On a half-day leave day the employee can still check in for the working half; no Late tag that day.
+- Check-in is allowed any day (including weekends and holidays) and at any time (including after office hours). Weekend and holiday days do **not** count toward the WFH limit and are **never** marked late. `work_date` is the Pune date (`core/time.office_today()`), never the server's UTC date.
 - Weekends and holidays are skipped in leave/WFH date ranges.
 - Approval routing: to the employee's `reports_to` manager; if none, to HR. (Only HR exists today.)
 - Role checks must be enforced **in the backend** on every route, not only by hiding UI.

@@ -97,13 +97,16 @@ Design decisions:
 ## Business rules
 
 - Office hours 10:30 to 19:30. **Late** = check-in after 10:30 + 30 min grace = after **11:00** (11:00 exactly is on time). Configurable: OFFICE_START, OFFICE_END, LATE_BUFFER_MIN.
-- **WFH limit**: 2 free WFH days per employee per calendar month (half WFH = 0.5). When used = 2, any further WFH creates a PENDING request needing approval (reason required). Configurable: WFH_FREE_DAYS_PER_MONTH.
+- **WFH limit**: 2 free WFH days per employee per calendar month (half WFH = 0.5). When used = 2, any further WFH creates a PENDING request needing approval (reason optional). Configurable: WFH_FREE_DAYS_PER_MONTH.
 - Leave always needs approval. Show note: apply at least 1 day in advance (not hard-enforced yet; idea: block same-day for Casual/Earned, allow Sick).
 - Half-day counts: half leave + half office/WFH count 0.5 each side in all totals.
 - On a half-day leave day the employee can still check in for the working half; no Late tag that day.
 - Check-in is allowed any day (including weekends and holidays) and at any time (including after office hours). Weekend and holiday days do **not** count toward the WFH limit and are **never** marked late. `work_date` is the Pune date (`core/time.office_today()`), never the server's UTC date.
 - Weekends and holidays are skipped in leave/WFH date ranges.
-- Approval routing: to the employee's `reports_to` manager; if none, to HR. (Only HR exists today.)
+- Request status is **never stored in attendance**. Pending/rejected days in history are derived from the `request` table ("Awaiting approval", "Rejected"); attendance rows exist only once a request is APPROVED (or the employee checks in).
+- On approval, the backend creates or updates one attendance row per working day in the range and sets `request_id`. If a day already has a row: half-day leave and WFH update the leave/work-mode fields and keep `in_time`; full leave is rejected if the employee already checked in that day.
+- HR decides with APPROVED or REJECTED only; no decision comment. `decided_by_id` and `decided_at` are set by the server.
+- Approval routing (for now): **only HR** lists and decides requests, so `decided_by_id` is always an HR employee. Enforced in the app (HR-only routes + a role check in `decide_request`), because a foreign key cannot check the referenced employee's role. Later: let a `reports_to` manager decide for their direct reports.
 - Role checks must be enforced **in the backend** on every route, not only by hiding UI.
 - Managers and HR are also employees (they check in, request leave, etc.). Navigation is layered: employee screens for everyone, + team screens for MANAGER, + everything for HR.
 

@@ -1,6 +1,14 @@
 from fastapi import FastAPI
 
-from app.api.routes import attendance, auth, employees, health, holidays
+from app.api.routes import (
+    attendance,
+    auth,
+    dashboard,
+    employees,
+    health,
+    holidays,
+    requests,
+)
 
 app = FastAPI(
     title="Attendance App",
@@ -13,3 +21,5 @@ app.include_router(auth.router, prefix="/api")
 app.include_router(employees.router, prefix="/api")
 app.include_router(attendance.router, prefix="/api")
 app.include_router(holidays.router, prefix="/api")
+app.include_router(requests.router, prefix="/api")
+app.include_router(dashboard.router, prefix="/api")

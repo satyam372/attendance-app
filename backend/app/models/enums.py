@@ -56,8 +56,11 @@ class DayStatus(StrEnum):
     HALF_DAY_LEAVE = "HALF_DAY_LEAVE"
     LEAVE = "LEAVE"
     HOLIDAY = "HOLIDAY"
+    WEEKEND = "WEEKEND"  # HR day view only; the employee history skips weekends instead
     ABSENT = "ABSENT"  # past working day with no attendance row
     NOT_CHECKED_IN = "NOT_CHECKED_IN"  # today, not checked in yet
+    AWAITING_APPROVAL = "AWAITING_APPROVAL"  # no row, a PENDING request covers the day
+    REJECTED = "REJECTED"  # no row, the request for the day was rejected
 
 
 class Punctuality(StrEnum):

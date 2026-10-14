@@ -15,6 +15,11 @@ class ManagerNotFoundError(Exception):
     """reports_to_id does not point to an active employee."""
 
 
+def list_employees(session: Session) -> list[Employee]:
+    """Everyone, active and inactive, sorted by name (HR Team tab)."""
+    return list(session.exec(select(Employee).order_by(Employee.name)).all())
+
+
 def create_employee(session: Session, data: EmployeeCreate) -> Employee:
     # data.email is already lowercase (EmployeeBase validator)
     if session.exec(select(Employee).where(Employee.email == data.email)).first():

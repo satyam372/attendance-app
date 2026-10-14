@@ -115,9 +115,9 @@ What was asked for and the decision. Covers leave and WFH.
 | leave_half | LeaveHalf | required for HALF_DAY_LEAVE and HALF_LEAVE_HALF_WFH |
 | leave_category | LeaveCategory | required for leave types, empty for WFH types |
 | holiday_id | uuid → holiday.id | only when leave_category = OPTIONAL_HOLIDAY |
-| reason | string | required for WFH beyond the free limit |
+| reason | string | optional for every request type |
 | status | ApprovalStatus | default PENDING |
-| decided_by_id | uuid → employee.id | who approved or rejected |
+| decided_by_id | uuid → employee.id | who approved or rejected; always an HR employee (checked in the app, not by the FK) |
 | decided_at | datetime (UTC) | when decided |
 | created_at | datetime (UTC) | used for the "apply 1 day in advance" rule |
 
@@ -160,7 +160,9 @@ What was asked for and the decision. Covers leave and WFH.
 - WFH: 2 free days per employee per calendar month (`WFH_FREE_DAYS_PER_MONTH`). Beyond that, choosing WFH creates a PENDING request.
 - Approval routing: a request goes to the employee's `reports_to` manager; if empty, to HR.
 - Leave should be applied at least 1 day in advance (checked against `request.created_at`).
-- When a request is APPROVED, the backend creates or updates the matching attendance rows and sets `request_id`.
+- When a request is APPROVED, the backend creates or updates the matching attendance rows (working days only) and sets `request_id`. Existing row: half-day leave and WFH update the leave/work-mode fields and keep `in_time`; full leave is rejected if that day already has a check-in.
+- Pending and rejected requests are not written to attendance; the history view derives "Awaiting approval" / "Rejected" from `request`.
+- Request rules enforced in Pydantic and as CHECK constraints: `to_date >= from_date`; half-day types need `leave_half` and a single date; leave types need `leave_category`, WFH types must not have one; `holiday_id` only (and always) with `OPTIONAL_HOLIDAY`, which must be a single-date FULL_LEAVE; `decided_by_id`/`decided_at` set exactly when status is not PENDING.
 - All date-times are stored in UTC and evaluated in Asia/Kolkata.
 
 ## Future (not in this version)

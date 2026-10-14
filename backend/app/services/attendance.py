@@ -12,8 +12,9 @@ from sqlmodel import Session, select
 from app.core.config import get_settings
 from app.core.time import is_late, is_weekend, punctuality, to_office_time
 from app.models.attendance import Attendance, AttendancePublic
-from app.models.enums import DayStatus, LeavePortion, WorkMode
+from app.models.enums import ApprovalStatus, DayStatus, LeavePortion, WorkMode
 from app.models.holiday import Holiday
+from app.models.request import Request
 from app.models.user import Employee
 from app.schemas.attendance import AttendanceDay, TodayStatus
 from app.services.holiday import holiday_dates_between, holidays_between, is_working_day
@@ -100,9 +101,11 @@ def check_in(
         if row.leave_portion == LeavePortion.FULL:
             raise OnLeaveError
 
-    # A row that exists before check-in was made by an approved request (or HR), so it
-    # already decided today's mode and the WFH limit does not apply
-    if row is not None and row.work_mode is not None:
+    # A row from an approved request (or an HR correction) already decided today's mode,
+    # so the WFH limit does not apply
+    if row is not None and row.work_mode is not None and (
+        row.request_id is not None or row.updated_by_id is not None
+    ):
         work_mode = row.work_mode
     elif work_mode == WorkMode.WFH and is_working_day(session, today):
         used = count_wfh_used(session, employee.id, today.year, today.month)
@@ -164,7 +167,13 @@ def get_today_status(session: Session, employee: Employee, now: datetime | None 
     )
 
 
-def _day_status(row: Attendance | None, holiday: Holiday | None, day: date, today: date) -> DayStatus:
+def _day_status(
+    row: Attendance | None,
+    closed_holiday: Holiday | None,
+    request_status: ApprovalStatus | None,
+    day: date,
+    today: date,
+) -> DayStatus:
     if row is not None:
         if row.leave_portion == LeavePortion.FULL:
             return DayStatus.LEAVE
@@ -172,9 +181,37 @@ def _day_status(row: Attendance | None, holiday: Holiday | None, day: date, toda
             return DayStatus.HALF_DAY_LEAVE
         if row.work_mode is not None:
             return DayStatus(row.work_mode.value)  # OFFICE, WFH or HYBRID
-    if holiday is not None:
+    if closed_holiday is not None:
         return DayStatus.HOLIDAY
+    # Request status is never stored in attendance; it is derived here (CLAUDE.md)
+    if request_status == ApprovalStatus.PENDING:
+        return DayStatus.AWAITING_APPROVAL
+    if request_status == ApprovalStatus.REJECTED:
+        return DayStatus.REJECTED
     return DayStatus.NOT_CHECKED_IN if day == today else DayStatus.ABSENT
+
+
+def _open_request_status_by_day(
+    session: Session, employee_id: uuid.UUID, first: date, last: date
+) -> dict[date, ApprovalStatus]:
+    """PENDING or REJECTED request status per day in [first, last]. PENDING wins over REJECTED
+    when both cover a day (the employee asked again after a rejection)."""
+    requests = session.exec(
+        select(Request).where(
+            Request.employee_id == employee_id,
+            Request.status.in_([ApprovalStatus.PENDING, ApprovalStatus.REJECTED]),
+            Request.from_date <= last,
+            Request.to_date >= first,
+        )
+    ).all()
+    by_day: dict[date, ApprovalStatus] = {}
+    for request in requests:
+        day = max(request.from_date, first)
+        while day <= min(request.to_date, last):
+            if by_day.get(day) != ApprovalStatus.PENDING:
+                by_day[day] = request.status
+            day += timedelta(days=1)
+    return by_day
 
 
 def get_month_history(
@@ -202,23 +239,28 @@ def get_month_history(
     ).all()
     rows_by_date = {row.work_date: row for row in rows}
     holidays = holidays_between(session, first, last + timedelta(days=1))
+    request_status = _open_request_status_by_day(session, employee.id, first, last)
 
     days: list[AttendanceDay] = []
     day = last
     while day >= first:
         row = rows_by_date.get(day)
         holiday = holidays.get(day)
+        closed_holiday = holiday if holiday is not None and not holiday.is_optional else None
         if row is None and is_weekend(day):
             day -= timedelta(days=1)
             continue
 
-        working_day = not is_weekend(day) and holiday is None
+        # Optional holidays are working days: the office is open
+        working_day = not is_weekend(day) and closed_holiday is None
         in_time = row.in_time if row else None
         out_time = row.out_time if row else None
         days.append(
             AttendanceDay(
                 work_date=day,
-                status=_day_status(row, holiday, day, today),
+                status=_day_status(
+                    row, closed_holiday, request_status.get(day) if working_day else None, day, today
+                ),
                 holiday_name=holiday.name if holiday else None,
                 in_time=in_time,
                 out_time=out_time,

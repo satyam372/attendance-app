@@ -1,6 +1,6 @@
 """Holiday lookups shared by attendance and (later) leave/WFH requests."""
 
-from datetime import date
+from datetime import date, timedelta
 
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
@@ -43,13 +43,27 @@ def holidays_between(session: Session, start: date, end: date) -> dict[date, Hol
 
 
 def holiday_dates_between(session: Session, start: date, end: date) -> set[date]:
-    """Holiday dates in [start, end)."""
-    return set(holidays_between(session, start, end))
+    """Dates in [start, end) when the office is closed. Optional holidays are not included:
+    the office is open and an employee takes one through a leave request."""
+    return {day for day, holiday in holidays_between(session, start, end).items() if not holiday.is_optional}
 
 
 def is_working_day(session: Session, day: date) -> bool:
-    """Monday to Friday and not a company holiday (optional holidays included)."""
+    """Monday to Friday and not a company holiday. Optional holidays are working days."""
     if is_weekend(day):
         return False
-    holiday = session.exec(select(Holiday.id).where(Holiday.holiday_date == day)).first()
-    return holiday is None
+    closed = session.exec(
+        select(Holiday.id).where(Holiday.holiday_date == day, Holiday.is_optional == False)
+    ).first()
+    return closed is None
+
+
+def working_days_between(session: Session, start: date, end: date) -> list[date]:
+    """Working days in [start, end], inclusive, oldest first. Used for leave/WFH ranges."""
+    closed = holiday_dates_between(session, start, end + timedelta(days=1))
+    days, day = [], start
+    while day <= end:
+        if not is_weekend(day) and day not in closed:
+            days.append(day)
+        day += timedelta(days=1)
+    return days

@@ -41,7 +41,7 @@ class Attendance(AttendanceBase, TimestampMixin, table=True):
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     employee_id: uuid.UUID = Field(foreign_key="employee.id", index=True)
-    # TODO: add request_id (FK to request.id) together with models/request.py
+    request_id: uuid.UUID | None = Field(default=None, foreign_key="request.id")  # approved request
     updated_by_id: uuid.UUID | None = Field(default=None, foreign_key="employee.id")
 
 

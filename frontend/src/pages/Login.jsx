@@ -75,38 +75,39 @@ export default function Login() {
     <main
       className={clsx(
         "bg-login relative flex h-dvh flex-col overflow-hidden text-ink sm:h-auto sm:min-h-dvh",
-        "sm:items-center sm:justify-center sm:px-5 sm:py-10",
-        // Intro offsets: smaller lift and a full-height sheet slide on phones.
+        "sm:items-center sm:justify-center sm:px-5 sm:py-10 lg:px-10",
+        // Intro offsets: smaller lift and a full-height sheet slide on phones; on PC the logo grows in place.
         "[--lift-scale:1.08] [--lift-y:40px] [--sheet-y:105%] sm:[--lift-scale:1.25] sm:[--lift-y:118px] sm:[--sheet-y:48px]",
+        "lg:[--lift-scale:1.15] lg:[--lift-y:0px]",
       )}
     >
-      <div className="flex min-h-0 w-full flex-1 flex-col sm:max-w-[460px] sm:flex-none sm:gap-5">
+      <div className="flex min-h-0 w-full flex-1 flex-col sm:max-w-[460px] sm:flex-none sm:gap-5 lg:max-w-6xl lg:flex-row lg:items-center lg:gap-16">
         {/* Brand and illustration. Phones: the top 40% of the screen, illustration scaled to fit above the
-            brand. From sm up: fixed-height stage with the illustration behind the brand, as designed. */}
-        <div className="relative flex h-[40dvh] shrink-0 flex-col items-center gap-4 px-6 pt-[max(20px,env(safe-area-inset-top))] pb-7 sm:h-[300px] sm:justify-end sm:gap-0 sm:px-0 sm:pt-0 sm:pb-6">
+            brand. Tablets: fixed-height stage above the card, as designed. PC (lg): the left half, card on the right. */}
+        <div className="relative flex h-[40dvh] shrink-0 flex-col items-center gap-4 px-6 pt-[max(20px,env(safe-area-inset-top))] pb-7 sm:h-[300px] sm:justify-end sm:gap-0 sm:px-0 sm:pt-0 sm:pb-6 lg:h-auto lg:flex-1 lg:shrink lg:justify-center lg:gap-8 lg:pb-0">
           <div
             className={clsx(
-              "flex min-h-0 w-full flex-1 justify-center sm:absolute sm:inset-x-0 sm:top-0 sm:flex-none",
+              "flex min-h-0 w-full flex-1 justify-center sm:absolute sm:inset-x-0 sm:top-0 sm:flex-none lg:static",
               intro("motion-safe:animate-intro-art"),
             )}
           >
-            <LoginIllustration className="h-full w-auto max-w-full sm:h-auto sm:w-full sm:max-w-[380px]" />
+            <LoginIllustration className="h-full w-auto max-w-full sm:h-auto sm:w-full sm:max-w-[380px] lg:max-w-[540px]" />
           </div>
           <div className={clsx("relative flex justify-center", intro("motion-safe:animate-intro-lift"))}>
             <h1 className={clsx("m-0 flex leading-none", intro("motion-safe:animate-intro-appear"))}>
-              <Wordmark intro={playIntro} className="text-[26px] sm:text-[34px]" />
+              <Wordmark intro={playIntro} className="text-[26px] sm:text-[34px] lg:text-[44px]" />
             </h1>
           </div>
         </div>
 
         {/* Sign-in card: a bottom sheet filling the remaining 60% on phones, with the button anchored to the
-            bottom in thumb reach (scrolls inside only if it must); a floating card from sm up */}
+            bottom in thumb reach (scrolls inside only if it must); a floating card from sm up, the right column on PC */}
         <section
           aria-labelledby="login-heading"
           className={clsx(
             "flex min-h-0 flex-1 flex-col overflow-y-auto rounded-t-sheet border-t border-line bg-surface px-6 pt-[30px] pb-[max(28px,env(safe-area-inset-bottom))] short:pt-6 short:pb-[max(20px,env(safe-area-inset-bottom))]",
             "shadow-[0_-24px_60px_rgb(46_29_92/0.1)] dark:shadow-[0_-24px_60px_rgb(0_0_0/0.35)]",
-            "sm:flex-none sm:overflow-visible sm:rounded-sheet sm:border sm:px-9 sm:pt-8 sm:pb-9",
+            "sm:flex-none sm:overflow-visible sm:rounded-sheet sm:border sm:px-9 sm:pt-8 sm:pb-9 lg:w-[440px] lg:shrink-0",
             "sm:shadow-[0_30px_80px_rgb(46_29_92/0.14)] sm:dark:shadow-[0_30px_80px_rgb(0_0_0/0.45)]",
             intro("motion-safe:animate-intro-sheet"),
           )}

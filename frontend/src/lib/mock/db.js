@@ -3,15 +3,17 @@ import { Role } from "../domain/enums.js";
 // In-browser stand-in for the database while the backend is being built.
 // Shapes follow docs/schema.md and docs/api-contract.md. Persisted in localStorage
 // so state survives reloads; bump STORAGE_KEY when the seed shape changes.
+// IDs are UUID strings, like the backend (uuid4).
 
-const STORAGE_KEY = "speedin-mock-db-v1";
+const STORAGE_KEY = "speedin-mock-db-v2";
 
 // Demo-only password for every seeded account (mock mode only, never a real credential).
 export const DEMO_PASSWORD = "speedin123";
 
 function seed() {
-  const employee = (id, name, email, role = Role.EMPLOYEE) => ({
-    id,
+  const uuid = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
+  const employee = (n, name, email, role = Role.EMPLOYEE) => ({
+    id: uuid(n),
     name,
     email,
     role,
@@ -33,17 +35,17 @@ function seed() {
       employee(7, "Snehal Avhad", "snehal@speedinnovations.in"),
     ],
     holidays: [
-      { id: 1, name: "Republic Day", holiday_date: "2026-01-26", is_optional: false },
-      { id: 2, name: "Holi", holiday_date: "2026-03-04", is_optional: false },
-      { id: 3, name: "Gudi Padwa", holiday_date: "2026-03-19", is_optional: false },
-      { id: 4, name: "Maharashtra Day", holiday_date: "2026-05-01", is_optional: false },
-      { id: 5, name: "Independence Day", holiday_date: "2026-08-15", is_optional: false },
-      { id: 6, name: "Ganesh Chaturthi", holiday_date: "2026-09-14", is_optional: false },
-      { id: 7, name: "Gandhi Jayanti", holiday_date: "2026-10-02", is_optional: false },
-      { id: 8, name: "Dussehra", holiday_date: "2026-10-20", is_optional: false },
-      { id: 9, name: "Diwali (Padwa)", holiday_date: "2026-11-09", is_optional: false },
-      { id: 10, name: "Bhai Dooj", holiday_date: "2026-11-11", is_optional: false },
-      { id: 11, name: "Christmas", holiday_date: "2026-12-25", is_optional: false },
+      { id: uuid(101), name: "Republic Day", holiday_date: "2026-01-26", is_optional: false },
+      { id: uuid(102), name: "Holi", holiday_date: "2026-03-04", is_optional: false },
+      { id: uuid(103), name: "Gudi Padwa", holiday_date: "2026-03-19", is_optional: false },
+      { id: uuid(104), name: "Maharashtra Day", holiday_date: "2026-05-01", is_optional: false },
+      { id: uuid(105), name: "Independence Day", holiday_date: "2026-08-15", is_optional: false },
+      { id: uuid(106), name: "Ganesh Chaturthi", holiday_date: "2026-09-14", is_optional: false },
+      { id: uuid(107), name: "Gandhi Jayanti", holiday_date: "2026-10-02", is_optional: false },
+      { id: uuid(108), name: "Dussehra", holiday_date: "2026-10-20", is_optional: false },
+      { id: uuid(109), name: "Diwali (Padwa)", holiday_date: "2026-11-09", is_optional: false },
+      { id: uuid(110), name: "Bhai Dooj", holiday_date: "2026-11-11", is_optional: false },
+      { id: uuid(111), name: "Christmas", holiday_date: "2026-12-25", is_optional: false },
     ],
     attendance: [],
     requests: [],

@@ -20,7 +20,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = useCallback(async (email, password) => {
-    const { user } = await authService.login(email, password);
+    const user = await authService.login(email, password);
     setState({ status: "authenticated", user });
     return user;
   }, []);

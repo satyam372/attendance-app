@@ -8,7 +8,7 @@ const SESSION_KEY = "speedin-mock-session";
 
 function readSession() {
   try {
-    return Number(localStorage.getItem(SESSION_KEY)) || null;
+    return localStorage.getItem(SESSION_KEY);
   } catch {
     return null;
   }
@@ -16,7 +16,7 @@ function readSession() {
 
 function writeSession(id) {
   try {
-    if (id) localStorage.setItem(SESSION_KEY, String(id));
+    if (id) localStorage.setItem(SESSION_KEY, id);
     else localStorage.removeItem(SESSION_KEY);
   } catch {
     // Ignore: the session then lasts until reload.
@@ -26,10 +26,11 @@ function writeSession(id) {
 export async function login(email, password) {
   await delay(600);
   const user = getDb().employees.find((e) => e.email === email.trim().toLowerCase());
-  if (!user || user.password !== password) throw new ApiError(401, "Email or password is incorrect.");
-  if (!user.is_active) throw new ApiError(403, "This account is inactive. Contact HR.");
+  // Same status codes and messages as backend/app/api/routes/auth.py
+  if (!user || user.password !== password) throw new ApiError(401, "Invalid email or password");
+  if (!user.is_active) throw new ApiError(403, "Your account is deactivated. Contact HR.");
   writeSession(user.id);
-  return { user: publicEmployee(user) };
+  return publicEmployee(user);
 }
 
 export async function logout() {

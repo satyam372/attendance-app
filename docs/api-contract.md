@@ -4,7 +4,7 @@ The endpoints the frontend calls. Data shapes and enums follow [`schema.md`](sch
 
 Until an endpoint exists in the backend, the frontend uses an in-browser mock with the same signatures (`frontend/src/lib/mock/`, enabled with `USE_MOCK_API=true`). The services in `frontend/src/lib/services/` are the only place that calls the API.
 
-**Status:** Auth is used by the frontend now. The other sections are the planned shape for upcoming screens and may still change; they will be finalised in the PR that first uses them.
+**Status:** Auth matches the implemented backend (`backend/app/api/routes/auth.py`) and is used by the frontend now. The backend also implements attendance, holidays, requests, employees and dashboard routes; the sections below for those are the frontend's earlier plan and will be reconciled with the real routes in the PR that first uses each one.
 
 ## Conventions
 
@@ -18,29 +18,29 @@ Until an endpoint exists in the backend, the frontend uses an in-browser mock wi
 ## Shared shapes
 
 ```jsonc
-// Employee (never includes password_hash)
-{ "id": 3, "name": "Sandip Sarode", "email": "sandip@speedinnovations.in", "role": "EMPLOYEE",
+// Employee (EmployeePublic; never includes password_hash). All ids are UUID strings.
+{ "id": "5f0c…", "name": "Sandip Sarode", "email": "sandip@speedinnovations.in", "role": "EMPLOYEE",
   "reports_to_id": null, "is_active": true, "must_change_password": false, "created_at": "2026-10-01T04:30:00Z" }
 
 // Attendance
-{ "id": 41, "employee_id": 3, "work_date": "2026-10-12", "work_mode": "OFFICE", "leave_portion": "NONE",
+{ "id": "9b2e…", "employee_id": "5f0c…", "work_date": "2026-10-12", "work_mode": "OFFICE", "leave_portion": "NONE",
   "leave_half": null, "in_time": "2026-10-12T05:01:00Z", "out_time": null, "request_id": null,
   "updated_by_id": null, "updated_at": "2026-10-12T05:01:00Z" }
 
 // Request
-{ "id": 7, "employee_id": 3, "request_type": "HALF_DAY_LEAVE", "from_date": "2026-10-14", "to_date": "2026-10-14",
+{ "id": "c41a…", "employee_id": "5f0c…", "request_type": "HALF_DAY_LEAVE", "from_date": "2026-10-14", "to_date": "2026-10-14",
   "leave_half": "FIRST_HALF", "leave_category": "CASUAL", "holiday_id": null, "reason": "Bank work",
   "status": "PENDING", "decided_by_id": null, "decided_at": null, "created_at": "2026-10-12T09:15:00Z" }
 
 // Holiday
-{ "id": 8, "name": "Dussehra", "holiday_date": "2026-10-20", "is_optional": false }
+{ "id": "e7d3…", "name": "Dussehra", "holiday_date": "2026-10-20", "is_optional": false }
 ```
 
 ## Auth (in use)
 
 | Method | Path | Body | Response |
 |---|---|---|---|
-| POST | `/api/auth/login` | `{ "email", "password" }` (email lowercased by the client) | `200 { "user": Employee }` + sets the auth cookie. `401` wrong email or password, `403` inactive account |
+| POST | `/api/auth/login` | `{ "email", "password" }` (the server trims and lowercases the email) | `200 Employee` + sets the auth cookie. `401` "Invalid email or password", `403` "Your account is deactivated. Contact HR." |
 | POST | `/api/auth/logout` | none | `204`, clears the cookie |
 | GET | `/api/auth/me` | none | `200 Employee`, or `401` when not signed in |
 

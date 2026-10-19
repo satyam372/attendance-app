@@ -1,39 +1,79 @@
 import { useEffect } from "react";
 
 import { useAuth } from "../auth/AuthContext.jsx";
-import { Card } from "../components/ui/Card.jsx";
-import { formatLongDate, minutesInOfficeTz } from "../lib/domain/time.js";
+import { CheckInCard } from "../components/home/CheckInCard.jsx";
+import { MonthStats } from "../components/home/MonthStats.jsx";
+import { HoursChart } from "../components/home/HoursChart.jsx";
+import { TodayTimes } from "../components/home/TodayTimes.jsx";
+import { Avatar } from "../components/ui/Avatar.jsx";
+import { useNow } from "../hooks/useNow.js";
+import { useToday } from "../hooks/useAttendance.js";
+import { BUSINESS_RULES } from "../lib/domain/config.js";
+import { formatHm, formatLongDate, minutesInOfficeTz, toDateKey } from "../lib/domain/time.js";
 
-function greeting() {
-  const hour = Math.floor(minutesInOfficeTz(new Date()) / 60);
+function greeting(now) {
+  const hour = Math.floor(minutesInOfficeTz(now) / 60);
   if (hour < 12) return "Good morning";
   if (hour < 17) return "Good afternoon";
   return "Good evening";
 }
 
-// Placeholder until the employee screens land (check-in, requests, history).
+/** Employee home: check in/out, today's times, this week and this month (Home + Dashboard artboards). */
 export default function EmployeeHome() {
   const { user } = useAuth();
+  const now = useNow();
+  const today = useToday();
   const firstName = user.name.split(" ")[0];
+  const todayKey = today.data?.work_date ?? toDateKey(now);
 
   useEffect(() => {
     document.title = "Home · SpeedIn";
   }, []);
 
   return (
-    <div className="flex flex-col gap-6">
-      <div>
-        <p className="m-0 text-sm text-ink-muted">{formatLongDate()}</p>
-        <h1 className="m-0 mt-1 text-3xl font-semibold tracking-[-0.02em] sm:text-4xl">
-          {greeting()}, {firstName}
+    <div className="flex flex-col gap-5 lg:gap-6">
+      {/* Phone header: avatar and greeting */}
+      <header className="flex items-center gap-3 lg:hidden">
+        <Avatar name={user.name} />
+        <div>
+          <p className="m-0 text-[13px] text-ink-muted">{greeting(now)}</p>
+          <h1 className="m-0 text-[17px] font-bold">{user.name}</h1>
+        </div>
+      </header>
+
+      {/* PC header */}
+      <header className="hidden lg:block">
+        <h1 className="m-0 text-[28px] font-extrabold tracking-[-0.02em]">
+          {greeting(now)}, {firstName}
         </h1>
-      </div>
-      <Card>
-        <h2 className="m-0 text-lg font-semibold">Your attendance home is on its way</h2>
-        <p className="m-0 mt-2 max-w-prose text-[15px] text-ink-muted">
-          Check in and out, leave and work from home requests, and your monthly summary will appear here.
+        <p className="m-0 mt-1 text-sm text-ink-muted">
+          {formatLongDate(now)} · Office hours {formatHm(BUSINESS_RULES.officeStart)} – {formatHm(BUSINESS_RULES.officeEnd)}
         </p>
-      </Card>
+      </header>
+
+      <div className="flex flex-col gap-5 lg:grid lg:grid-cols-[minmax(320px,380px)_1fr] lg:items-start">
+        <div className="flex flex-col gap-5">
+          <CheckInCard
+            today={today.data}
+            isLoading={today.isLoading}
+            isError={today.isError}
+            onRetry={() => today.refetch()}
+            now={now}
+          />
+          {today.data && <TodayTimes attendance={today.data.attendance} now={now} className="lg:hidden" />}
+        </div>
+
+        <div className="flex flex-col gap-5">
+          {/* Phones: this week (Home artboard). PC: this month (Desktop Dashboard artboard). */}
+          <div className="lg:hidden">
+            <HoursChart range="week" todayKey={todayKey} attendance={today.data?.attendance} now={now} />
+          </div>
+          <div className="hidden lg:block">
+            <HoursChart range="month" todayKey={todayKey} attendance={today.data?.attendance} now={now} />
+          </div>
+          {today.data && <MonthStats today={today.data} />}
+        </div>
+      </div>
     </div>
   );
 }

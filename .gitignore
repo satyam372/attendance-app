@@ -8,6 +8,7 @@ __pycache__/
 # Node / Parcel
 node_modules/
 dist/
+dist-dev/
 .parcel-cache/
 
 # Env files (commit only the .example ones)

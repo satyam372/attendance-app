@@ -40,13 +40,14 @@ Backend dependencies are managed with **uv** (`backend/pyproject.toml` + `backen
 
 ## Project structure
 
-All code files currently exist as **empty placeholders** (I am writing them).
+Most backend files are still **empty placeholders** (I am writing them). The frontend is being built in a series of PRs against a mock API.
 
 ```
 attendance-app/
 ├── CLAUDE.md
 ├── vercel.json                    # multi-service: backend at /api, frontend at /
 ├── docs/schema.md                 # database schema (source of truth)
+├── docs/api-contract.md           # endpoints the frontend calls (methods, paths, bodies)
 ├── .github/workflows/ci.yml       # lint + tests + build on PRs to dev/main
 ├── .github/pull_request_template.md
 ├── backend/
@@ -61,14 +62,20 @@ attendance-app/
 │   ├── scripts/seed.py            # HR admin, team, holidays
 │   └── tests/                     # conftest.py, test_health.py, test_auth.py, test_time.py
 └── frontend/
-    ├── package.json, .env.example (API_URL=/api), .postcssrc, .proxyrc
+    ├── package.json, .env.example (API_URL, USE_MOCK_API), .postcssrc, .proxyrc
     └── src/
-        ├── index.html, main.jsx, App.jsx, styles.css
-        ├── lib/api.js             # fetch wrapper, credentials: "include"
-        ├── auth/AuthContext.jsx
-        ├── components/            # AppHeader.jsx, ProtectedRoute.jsx
-        └── pages/                 # Login.jsx, EmployeeHome.jsx, HrHome.jsx
+        ├── index.html, main.jsx, App.jsx (routes), styles.css (Tailwind 4 + design tokens, light/dark)
+        ├── lib/api.js             # fetch wrapper, credentials: "include", ApiError
+        ├── lib/services/          # one module per API area; picks real API or mock via USE_MOCK_API
+        ├── lib/mock/              # in-browser mock API + seed data (until the backend endpoints exist)
+        ├── lib/domain/            # enums, time zone helpers, business rules (+ node:test tests)
+        ├── auth/AuthContext.jsx   # session: me / login / logout
+        ├── theme/ThemeContext.jsx # system / light / dark preference
+        ├── components/            # AppHeader, AppLayout, ProtectedRoute, LoginIllustration, ui/ (Button, TextField, ...)
+        └── pages/                 # Login, EmployeeHome, HrHome, NotFound
 ```
+
+Frontend commands (in `frontend/`): `npm run dev` (port 1234), `npm run build`, `npm test` (domain rules). Styling is **Tailwind only**: use the tokens in `styles.css` (`bg-surface`, `text-ink`, `text-accent-ink`, ...), not raw hex values.
 
 ## Database schema
 
@@ -136,7 +143,7 @@ Design decisions:
 - Holidays: add/remove, upcoming/past.
 - Team: list, add employee (temporary password).
 
-Visual direction: navy `#1F4E79` header and sky `#DDEBF7` sub-header (from the original Excel), IBM Plex Sans / IBM Plex Sans Condensed. Status colours: office green, WFH teal, leave rose, late amber, absent grey.
+Visual direction: new "SpeedIn" design (replaces the prototype's navy/sky look). Rubik for UI text, Michroma for the speed-lines logo, deep purple palette, light and dark themes. Tokens live in `frontend/src/styles.css`.
 
 ## Git, CI/CD and deployment
 

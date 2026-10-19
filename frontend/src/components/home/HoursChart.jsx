@@ -2,7 +2,7 @@ import clsx from "clsx";
 import { Link } from "react-router-dom";
 
 import { useHistoryForDays } from "../../hooks/useAttendance.js";
-import { addDays, formatDuration, isWeekend, minutesBetween, shortWeekday, weekOf } from "../../lib/domain/time.js";
+import { addDays, formatDuration, minutesBetween, shortWeekday, weekOf } from "../../lib/domain/time.js";
 import { Skeleton } from "../ui/Skeleton.jsx";
 
 const BAR_HEIGHT = 96; // px, also the SVG viewBox height
@@ -26,14 +26,15 @@ function monthSoFar(todayKey) {
 
 /**
  * Hours worked per day; today's bar grows while checked in.
- * range "week": Monday to Sunday (phone Home artboard). "month": this month so far, weekdays plus
- * any weekend actually worked (Desktop Dashboard artboard).
+ * range "week": Monday to Sunday (phone Home artboard). "month": this month so far, the days the
+ * attendance history covers (Desktop Dashboard artboard).
  */
 export function HoursChart({ range = "week", todayKey, attendance, now, className }) {
   const candidates = range === "month" ? monthSoFar(todayKey) : weekOf(todayKey);
   const { byDate, isLoading } = useHistoryForDays(candidates);
-  const days =
-    range === "month" ? candidates.filter((day) => !isWeekend(day) || byDate.get(day)?.worked_minutes > 0 || day === todayKey) : candidates;
+  // Month: only days the history returns (it skips days before the employee joined and
+  // unworked weekends), plus today. Week: all seven days, so upcoming days show as empty.
+  const days = range === "month" ? candidates.filter((day) => byDate.has(day) || day === todayKey) : candidates;
   const title = range === "month" ? "Hours this month" : "This week";
   const headingId = `hours-${range}-heading`;
 

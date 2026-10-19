@@ -33,6 +33,15 @@
   --teal: #17b79a;
   --lavender: #9b85e6;
 
+  --accent-soft: #ece6fb;
+  --on-accent: #ffffff;
+  --checkout: #c2410c;
+  --checkout-soft: #ffedd5;
+  --late: #c2410c;
+  --late-soft: #ffedd5;
+  --bar: #d3c9e8;
+  --bar-empty: #e2e8f0;
+
   /* SpeedIn logo (Logo artboard: "on light") */
   --brand-ink: #493085;
   --brand-in: #0e8f86;
@@ -88,6 +97,15 @@
   --teal: #5ee6d0;
   --lavender: #cdbfff;
 
+  --accent-soft: rgb(124 98 230 / 0.22);
+  --on-accent: #ffffff;
+  --checkout: #ea580c;
+  --checkout-soft: rgb(251 146 60 / 0.16);
+  --late: #fdba74;
+  --late-soft: rgb(251 146 60 / 0.14);
+  --bar: #3b2f6e;
+  --bar-empty: rgb(255 255 255 / 0.08);
+
   /* SpeedIn logo (Logo artboard: "on dark") */
   --brand-ink: #f4f7fa;
   --brand-in: #5ee6d0;
@@ -118,6 +136,30 @@
   --ill-check: #ffffff;
 }
 
+/* App screens (inside AppLayout) use the Home/Dashboard artboard palette in light mode.
+   The login keeps its own lavender light theme; dark mode is shared. */
+html:not(.dark) .theme-app {
+  --canvas: #eff1ed;
+  --surface: #ffffff;
+  --field: #f8fafc;
+  --ink: #001e33;
+  --ink-soft: #334155;
+  --ink-muted: #64748b;
+  --placeholder: #94a3b8;
+  --line: #e2e8f0;
+  --line-strong: #cbd5e1;
+  --accent: #493085;
+  --accent-ink: #493085;
+  --accent-soft: #eae5f4;
+  --focus: #493085;
+  --focus-ring: rgb(73 48 133 / 0.2);
+  --primary: #493085;
+  --primary-ink: #ffffff;
+  --primary-hover: #3b2670;
+  --success: #15803d;
+  --teal: #0e8f86;
+}
+
 @theme inline {
   --font-sans: "Rubik", ui-sans-serif, system-ui, sans-serif;
   --font-brand: "Michroma", "Rubik", ui-sans-serif, sans-serif;
@@ -143,6 +185,14 @@
   --color-success: var(--success);
   --color-teal: var(--teal);
   --color-lavender: var(--lavender);
+  --color-accent-soft: var(--accent-soft);
+  --color-on-accent: var(--on-accent);
+  --color-checkout: var(--checkout);
+  --color-checkout-soft: var(--checkout-soft);
+  --color-late: var(--late);
+  --color-late-soft: var(--late-soft);
+  --color-bar: var(--bar);
+  --color-bar-empty: var(--bar-empty);
   --color-brand-ink: var(--brand-ink);
   --color-brand-in: var(--brand-in);
 

@@ -20,6 +20,26 @@ export function isLate(attendance, rules = BUSINESS_RULES) {
   return minutesInOfficeTz(attendance.in_time) > lateThresholdMinutes(rules);
 }
 
+export const Punctuality = Object.freeze({
+  ON_TIME: "ON_TIME",
+  WITHIN_GRACE: "WITHIN_GRACE",
+  LATE: "LATE",
+  NO_CHECK_IN: "NO_CHECK_IN",
+});
+
+/**
+ * Same rule as backend core/time.punctuality: null on weekends, holidays and leave days;
+ * NO_CHECK_IN without a check-in; otherwise ON_TIME (by 10:30), WITHIN_GRACE (by 11:00) or LATE.
+ */
+export function punctuality(inTime, leavePortion = LeavePortion.NONE, { workingDay = true } = {}, rules = BUSINESS_RULES) {
+  if (!workingDay || leavePortion !== LeavePortion.NONE) return null;
+  if (!inTime) return Punctuality.NO_CHECK_IN;
+  const minutes = minutesInOfficeTz(inTime);
+  if (minutes <= parseHm(rules.officeStart)) return Punctuality.ON_TIME;
+  if (minutes <= lateThresholdMinutes(rules)) return Punctuality.WITHIN_GRACE;
+  return Punctuality.LATE;
+}
+
 /** "none" | "ontime" (by office start) | "grace" (within the buffer) | "late". */
 export function inTimeBucket(inTime, rules = BUSINESS_RULES) {
   if (!inTime) return "none";

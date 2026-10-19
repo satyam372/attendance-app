@@ -7,6 +7,8 @@ import {
   inTimeBucket,
   isLate,
   isWorkingDay,
+  punctuality,
+  Punctuality,
   wfhDaysUsed,
   wfhWeight,
   workingDaysInRange,
@@ -87,5 +89,19 @@ describe("attendanceForRequest", () => {
 
   it("requires a half for half-day leave", () => {
     assert.throws(() => attendanceForRequest(RequestType.HALF_DAY_LEAVE));
+  });
+});
+
+describe("punctuality", () => {
+  it("matches the backend rule", () => {
+    assert.equal(punctuality(at("05:00")), Punctuality.ON_TIME);
+    assert.equal(punctuality(at("05:30")), Punctuality.WITHIN_GRACE);
+    assert.equal(punctuality(at("05:31")), Punctuality.LATE);
+    assert.equal(punctuality(null), Punctuality.NO_CHECK_IN);
+  });
+
+  it("does not apply on non-working days or leave days", () => {
+    assert.equal(punctuality(at("08:00"), LeavePortion.NONE, { workingDay: false }), null);
+    assert.equal(punctuality(at("08:00"), LeavePortion.HALF), null);
   });
 });

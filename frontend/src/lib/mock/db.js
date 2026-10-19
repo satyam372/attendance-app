@@ -1,11 +1,13 @@
-import { Role } from "../domain/enums.js";
+import { LeavePortion, Role, WorkMode } from "../domain/enums.js";
+import { addDays, isWeekend, toDateKey } from "../domain/time.js";
+import { uuid as randomId } from "./uuid.js";
 
 // In-browser stand-in for the database while the backend is being built.
 // Shapes follow docs/schema.md and docs/api-contract.md. Persisted in localStorage
 // so state survives reloads; bump STORAGE_KEY when the seed shape changes.
 // IDs are UUID strings, like the backend (uuid4).
 
-const STORAGE_KEY = "speedin-mock-db-v2";
+const STORAGE_KEY = "speedin-mock-db-v3";
 
 // Demo-only password for every seeded account (mock mode only, never a real credential).
 export const DEMO_PASSWORD = "speedin123";
@@ -20,7 +22,7 @@ function seed() {
     reports_to_id: null,
     is_active: true,
     must_change_password: false,
-    created_at: "2026-10-01T04:30:00Z",
+    created_at: "2026-01-01T04:30:00Z",
     password: DEMO_PASSWORD,
   });
 
@@ -52,15 +54,66 @@ function seed() {
   };
 }
 
+/** UTC ISO string for a time of day in India (UTC+5:30) on a "YYYY-MM-DD" date. */
+function istToUtc(dateKey, minutesOfDay) {
+  const [y, m, d] = dateKey.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d, 0, minutesOfDay - 330)).toISOString();
+}
+
+/**
+ * Plausible attendance from the start of last month up to yesterday, generated relative to
+ * today so the demo always has history. Deterministic: same seed every time.
+ * Sandip has used both free WFH days this month (to demo the limit); Ankur has used one.
+ */
+function seedAttendance(db) {
+  const today = toDateKey();
+  const [y, m] = today.split("-").map(Number);
+  const firstOfLastMonth = new Date(Date.UTC(y, m - 2, 1)).toISOString().slice(0, 10);
+  const thisMonth = today.slice(0, 7);
+  const closed = new Set(db.holidays.filter((h) => !h.is_optional).map((h) => h.holiday_date));
+  const rows = [];
+
+  db.employees.forEach((employee, e) => {
+    let i = 0;
+    let wfhThisMonth = 0;
+    for (let day = firstOfLastMonth; day < today; day = addDays(day, 1)) {
+      if (isWeekend(day) || closed.has(day)) continue;
+      i += 1;
+      const base = { id: randomId(), employee_id: employee.id, work_date: day, leave_half: null, request_id: null, updated_by_id: null };
+      if ((i + e * 3) % 17 === 0) {
+        rows.push({ ...base, work_mode: null, leave_portion: LeavePortion.FULL, in_time: null, out_time: null });
+        continue;
+      }
+      const inMinutes = 600 + ((i * 37 + e * 11) % 75); // 10:00 to 11:14
+      const worked = 510 + ((i * 7 + e) % 50);
+      let mode = WorkMode.OFFICE;
+      const inMonth = day.startsWith(thisMonth);
+      if (employee.email.startsWith("sandip") && inMonth && wfhThisMonth < 2) mode = WorkMode.WFH;
+      else if (employee.email.startsWith("ankur") && inMonth && wfhThisMonth < 1) mode = WorkMode.WFH;
+      else if (!inMonth && (i + e) % 9 === 0) mode = WorkMode.WFH;
+      if (mode === WorkMode.WFH && inMonth) wfhThisMonth += 1;
+      rows.push({
+        ...base,
+        work_mode: mode,
+        leave_portion: LeavePortion.NONE,
+        in_time: istToUtc(day, inMinutes),
+        out_time: istToUtc(day, inMinutes + worked),
+      });
+    }
+  });
+  db.attendance = rows;
+  return db;
+}
+
 let db = null;
 
 export function getDb() {
   if (db) return db;
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    db = raw ? JSON.parse(raw) : seed();
+    db = raw ? JSON.parse(raw) : seedAttendance(seed());
   } catch {
-    db = seed();
+    db = seedAttendance(seed());
   }
   return db;
 }
@@ -74,7 +127,7 @@ export function saveDb() {
 }
 
 export function resetDb() {
-  db = seed();
+  db = seedAttendance(seed());
   saveDb();
 }
 

@@ -42,6 +42,20 @@
   --bar: #d3c9e8;
   --bar-empty: #e2e8f0;
 
+  /* Attendance status colours (Attendance artboard legend) */
+  --present: #15803d;
+  --present-soft: #dcfce7;
+  --present-ink: #166534;
+  --late-dot: #f97316;
+  --absent: #b91c1c;
+  --absent-soft: #fee2e2;
+  --absent-ink: #991b1b;
+  --leave: #a78bfa;
+  --leave-soft: #ede9fe;
+  --leave-ink: #5b21b6;
+  --holiday: #94a3b8;
+  --pending: #8466b0;
+
   /* SpeedIn logo (Logo artboard: "on light") */
   --brand-ink: #493085;
   --brand-in: #0e8f86;
@@ -105,6 +119,19 @@
   --late-soft: rgb(251 146 60 / 0.14);
   --bar: #3b2f6e;
   --bar-empty: rgb(255 255 255 / 0.08);
+
+  --present: #34d399;
+  --present-soft: rgb(52 211 153 / 0.14);
+  --present-ink: #6ee7b7;
+  --late-dot: #fb923c;
+  --absent: #f87171;
+  --absent-soft: rgb(248 113 113 / 0.14);
+  --absent-ink: #fca5a5;
+  --leave: #c4b5fd;
+  --leave-soft: rgb(167 139 250 / 0.16);
+  --leave-ink: #ddd6fe;
+  --holiday: #64748b;
+  --pending: #b9a2d8;
 
   /* SpeedIn logo (Logo artboard: "on dark") */
   --brand-ink: #f4f7fa;
@@ -193,6 +220,18 @@ html:not(.dark) .theme-app {
   --color-late-soft: var(--late-soft);
   --color-bar: var(--bar);
   --color-bar-empty: var(--bar-empty);
+  --color-present: var(--present);
+  --color-present-soft: var(--present-soft);
+  --color-present-ink: var(--present-ink);
+  --color-late-dot: var(--late-dot);
+  --color-absent: var(--absent);
+  --color-absent-soft: var(--absent-soft);
+  --color-absent-ink: var(--absent-ink);
+  --color-leave: var(--leave);
+  --color-leave-soft: var(--leave-soft);
+  --color-leave-ink: var(--leave-ink);
+  --color-holiday: var(--holiday);
+  --color-pending: var(--pending);
   --color-brand-ink: var(--brand-ink);
   --color-brand-in: var(--brand-in);
 

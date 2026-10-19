@@ -60,22 +60,32 @@ Matches `backend/app/api/routes/attendance.py`. Every signed-in employee (manage
 - If an approved request (or an HR correction) already set today's work mode, check-in uses that mode whatever is sent.
 - Not built yet in the backend: HR attendance sheet for all employees and HR corrections (`AttendanceUpdate` exists as a model, no route yet).
 
-## Requests (planned)
+## Requests (raising: in use on the Leave screen)
+
+Matches `backend/app/api/routes/requests.py`.
+
+| Method | Path | Who | Body / query | Response |
+|---|---|---|---|---|
+| POST | `/api/requests` | any | `RequestCreate`: `request_type`, `from_date`, `to_date`, `leave_half`, `leave_category`, `holiday_id`, `reason` | `201 RequestPublic` (status PENDING). `422` "The selected dates are all weekends or holidays." / "Choose an optional holiday on the selected date." / combination errors; `409` "You already have a request for some of these dates." |
+| GET | `/api/requests?status=PENDING` (repeatable) | HR | `status` filter, none = all | `RequestWithEmployee[]` (RequestPublic + `employee_name`), newest first |
+| POST | `/api/requests/{id}/decision` | HR | `{ "status": "APPROVED" \| "REJECTED" }` | `RequestPublic`. `409` already decided, or full-day leave on a day already checked in |
+
+Combination rules (`RequestBase.check_combination`, mirrored in `frontend/src/lib/domain/requests.js`):
+- `to_date >= from_date`; half-day types (`HALF_DAY_LEAVE`, `HALF_LEAVE_HALF_WFH`) cover one date and need `leave_half`.
+- Leave types need `leave_category`; WFH types must not have one.
+- An optional holiday is a one-date `FULL_LEAVE` with `leave_category: OPTIONAL_HOLIDAY` and the holiday's `holiday_id`.
+- Every request starts PENDING (WFH too). Pending and rejected days appear in `/attendance/history` as `AWAITING_APPROVAL` / `REJECTED`.
+
+**Not available yet (requested):** `GET /api/requests/me` (the employee's own requests) and leave balances.
+
+## Holidays
 
 | Method | Path | Who | Notes |
 |---|---|---|---|
-| POST | `/api/requests` | any | Body: `request_type`, `from_date`, `to_date`, `leave_half`, `leave_category`, `holiday_id`, `reason`. Validation per schema.md |
-| GET | `/api/requests/me` | any | My requests, newest first |
-| GET | `/api/requests?status=PENDING` | HR, MANAGER (own reports) | Requests to decide |
-| POST | `/api/requests/{id}/decision` | HR, MANAGER (own reports) | Body `{ "status": "APPROVED" \| "REJECTED" }`. Approval creates or updates attendance rows |
+| GET | `/api/holidays` | any | `HolidayPublic[]` (`id`, `name`, `holiday_date`, `is_optional`), earliest first. In use on the Leave screen |
+| POST | `/api/holidays` | HR | Body `{ "name", "holiday_date", "is_optional" }`. `409` "A holiday already exists on this date" |
 
-## Holidays (planned)
-
-| Method | Path | Who | Notes |
-|---|---|---|---|
-| GET | `/api/holidays?year=2026` | any | Sorted by date |
-| POST | `/api/holidays` | HR | Body `{ "name", "holiday_date", "is_optional" }`. `409` if the date already has a holiday |
-| DELETE | `/api/holidays/{id}` | HR | `204` |
+Not available yet: deleting a holiday.
 
 ## Employees (planned)
 

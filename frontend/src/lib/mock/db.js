@@ -1,5 +1,6 @@
 import { LeavePortion, Role, WorkMode } from "../domain/enums.js";
 import { addDays, isWeekend, toDateKey } from "../domain/time.js";
+import { uuid as randomId } from "./uuid.js";
 
 // In-browser stand-in for the database while the backend is being built.
 // Shapes follow docs/schema.md and docs/api-contract.md. Persisted in localStorage
@@ -78,7 +79,7 @@ function seedAttendance(db) {
     for (let day = firstOfLastMonth; day < today; day = addDays(day, 1)) {
       if (isWeekend(day) || closed.has(day)) continue;
       i += 1;
-      const base = { id: crypto.randomUUID(), employee_id: employee.id, work_date: day, leave_half: null, request_id: null, updated_by_id: null };
+      const base = { id: randomId(), employee_id: employee.id, work_date: day, leave_half: null, request_id: null, updated_by_id: null };
       if ((i + e * 3) % 17 === 0) {
         rows.push({ ...base, work_mode: null, leave_portion: LeavePortion.FULL, in_time: null, out_time: null });
         continue;

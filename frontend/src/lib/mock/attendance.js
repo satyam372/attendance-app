@@ -5,6 +5,7 @@ import { Punctuality, punctuality } from "../domain/rules.js";
 import { addDays, isWeekend, minutesBetween, minutesInOfficeTz, monthOf, parseHm, toDateKey } from "../domain/time.js";
 import { currentEmployee } from "./auth.js";
 import { delay, getDb, saveDb } from "./db.js";
+import { uuid } from "./uuid.js";
 
 // Mock of /api/attendance/*. Mirrors backend/app/services/attendance.py and
 // routes/attendance.py: same rules, response shapes, status codes and messages.
@@ -89,7 +90,7 @@ export async function checkIn({ work_mode }) {
 
   if (!row) {
     row = {
-      id: crypto.randomUUID(),
+      id: uuid(),
       employee_id: employee.id,
       work_date: today,
       leave_portion: LeavePortion.NONE,

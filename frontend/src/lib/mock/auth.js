@@ -39,9 +39,14 @@ export async function logout() {
   return null;
 }
 
-export async function me() {
-  await delay(200);
+/** The signed-in employee (full record), or a 401 like the backend's CurrentUserDep. */
+export function currentEmployee() {
   const user = getDb().employees.find((e) => e.id === readSession() && e.is_active);
   if (!user) throw new ApiError(401, "Not signed in.");
-  return publicEmployee(user);
+  return user;
+}
+
+export async function me() {
+  await delay(200);
+  return publicEmployee(currentEmployee());
 }

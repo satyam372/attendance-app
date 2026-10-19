@@ -69,13 +69,15 @@ attendance-app/
         ├── lib/services/          # one module per API area; picks real API or mock via USE_MOCK_API
         ├── lib/mock/              # in-browser mock API + seed data (until the backend endpoints exist)
         ├── lib/domain/            # enums, time zone helpers, business rules (+ node:test tests)
-        ├── auth/AuthContext.jsx   # session: me / login / logout
+        ├── auth/AuthContext.jsx   # session: me / login / logout (clears the React Query cache)
         ├── theme/ThemeContext.jsx # system / light / dark preference
-        ├── components/            # AppHeader, AppLayout, ProtectedRoute, LoginIllustration, ui/ (Button, TextField, ...)
-        └── pages/                 # Login, EmployeeHome, HrHome, NotFound
+        ├── hooks/                 # useAttendance (React Query), useNow (live clock)
+        ├── components/            # AppLayout, ProtectedRoute, LoginIllustration, layout/ (Sidebar, BottomNav),
+        │                          # home/ (CheckInCard, TodayTimes, HoursChart, MonthStats), ui/ (Button, TextField, ...)
+        └── pages/                 # Login, EmployeeHome, Profile, HrHome, ComingSoon, NotFound
 ```
 
-Frontend commands (in `frontend/`): `npm run dev` (port 1234), `npm run build`, `npm test` (domain rules). Styling is **Tailwind only**: use the tokens in `styles.css` (`bg-surface`, `text-ink`, `text-accent-ink`, ...), not raw hex values.
+Frontend commands (in `frontend/`): `npm run dev` (port 1234), `npm run build`, `npm test` (domain rules). Server data goes through React Query hooks in `src/hooks/`; navigation is a sidebar on PC (lg+) and a bottom tab bar on phones. Styling is **Tailwind only**: use the tokens in `styles.css` (`bg-surface`, `text-ink`, `text-accent-ink`, ...), not raw hex values.
 
 ## Database schema
 

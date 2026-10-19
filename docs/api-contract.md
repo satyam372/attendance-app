@@ -44,16 +44,21 @@ Until an endpoint exists in the backend, the frontend uses an in-browser mock wi
 | POST | `/api/auth/logout` | none | `204`, clears the cookie |
 | GET | `/api/auth/me` | none | `200 Employee`, or `401` when not signed in |
 
-## Attendance (planned)
+## Attendance (in use: home screen)
 
-| Method | Path | Who | Notes |
+Matches `backend/app/api/routes/attendance.py`. Every signed-in employee (managers and HR too).
+
+| Method | Path | Body | Response |
 |---|---|---|---|
-| GET | `/api/attendance/today` | any | My row for today (or `null`), plus `wfh_used_this_month` (number, half days 0.5) |
-| POST | `/api/attendance/check-in` | any | Body `{ "work_mode": "OFFICE" \| "WFH" }`. Server sets `in_time`. WFH beyond the free limit also creates a PENDING `FULL_WFH` request (`reason` required) |
-| POST | `/api/attendance/check-out` | any | Server sets `out_time`. `409` if not checked in |
-| GET | `/api/attendance/me?month=YYYY-MM` | any | My rows for the month (history and summary) |
-| GET | `/api/attendance?from=YYYY-MM-DD&to=YYYY-MM-DD` | HR | Everyone's rows in the range (weekly sheet, today view, dashboard) |
-| PUT | `/api/attendance/{employee_id}/{work_date}` | HR | Create or correct a day: `work_mode`, `leave_portion`, `leave_half`, `in_time`, `out_time`. Sets `updated_by_id` |
+| GET | `/api/attendance/today` | none | `TodayStatus`: `{ "work_date", "attendance": AttendancePublic \| null, "wfh_used": 1.5, "wfh_free": 2, "is_working_day": true }` |
+| POST | `/api/attendance/check-in` | `{ "work_mode": "OFFICE" \| "WFH" }` (HYBRID is rejected with 422) | `201 AttendancePublic` (with `is_late`). `409` with a message: already checked in, on leave today, or free WFH days used up |
+| POST | `/api/attendance/check-out` | none | `200 AttendancePublic`. `409`: not checked in, or already checked out. Before 10:30 it closes yesterday's open late-night check-in |
+| GET | `/api/attendance/history?year=2026&month=10` | none | `AttendanceDay[]` for the month up to today, newest first: `{ "work_date", "status": DayStatus, "holiday_name", "in_time", "out_time", "worked_minutes", "punctuality": Punctuality \| null }` |
+
+- `DayStatus`: OFFICE, WFH, HYBRID, HALF_DAY_LEAVE, LEAVE, HOLIDAY, WEEKEND, ABSENT, NOT_CHECKED_IN, AWAITING_APPROVAL, REJECTED.
+- `Punctuality`: ON_TIME (by 10:30), WITHIN_GRACE (by 11:00), LATE, NO_CHECK_IN; `null` on weekends, holidays and leave days.
+- If an approved request (or an HR correction) already set today's work mode, check-in uses that mode whatever is sent.
+- Not built yet in the backend: HR attendance sheet for all employees and HR corrections (`AttendanceUpdate` exists as a model, no route yet).
 
 ## Requests (planned)
 

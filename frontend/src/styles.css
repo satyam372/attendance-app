@@ -167,13 +167,13 @@
   --radius-sheet: 28px;
 
   /* Login intro: wordmark blur-in, "novation" collapses, speed lines slide in, brand lifts, card rises, fields stagger.
-     Offsets that differ between mobile and desktop come from --lift-y / --lift-scale / --sheet-y. */
+     The lift starts at the screen centre: Login measures --lift-x / --lift-y; --lift-scale and --sheet-y vary by breakpoint. */
   --animate-intro-appear: intro-appear 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both;
   --animate-intro-collapse: intro-collapse 1.2s cubic-bezier(0.65, 0, 0.35, 1) 1.3s both;
   --animate-intro-tint: intro-tint 0.8s ease-out 1.4s both;
   --animate-intro-lines: intro-lines 1.1s cubic-bezier(0.22, 1, 0.36, 1) 2.35s both;
   --animate-intro-lift: intro-lift 1.2s cubic-bezier(0.22, 1, 0.36, 1) 2.4s both;
-  --animate-intro-art: intro-art 1.4s cubic-bezier(0.22, 1, 0.36, 1) 2.55s both;
+  --animate-intro-art: intro-art 1.2s cubic-bezier(0.22, 1, 0.36, 1) 3s both;
   --animate-intro-sheet: intro-sheet 1.05s cubic-bezier(0.16, 1, 0.3, 1) 2.5s both;
   --animate-intro-rise-1: intro-rise 0.8s cubic-bezier(0.22, 1, 0.36, 1) 3.1s both;
   --animate-intro-rise-2: intro-rise 0.8s cubic-bezier(0.22, 1, 0.36, 1) 3.2s both;
@@ -188,8 +188,8 @@
     to { opacity: 1; filter: blur(0); transform: none; }
   }
   @keyframes intro-collapse {
-    0% { max-width: 7.2em; opacity: 1; filter: blur(0); }
-    45% { max-width: 7.2em; opacity: 0; filter: blur(6px); }
+    /* Fade and shrink together, so the visible "SpeedIn" never sits beside an invisible gap. */
+    0%, 25% { max-width: 7.2em; opacity: 1; filter: blur(0); }
     100% { max-width: 0; opacity: 0; filter: blur(6px); }
   }
   @keyframes intro-tint {
@@ -201,7 +201,7 @@
     to { max-width: 1.5em; opacity: 1; transform: none; }
   }
   @keyframes intro-lift {
-    from { transform: translateY(var(--lift-y, 118px)) scale(var(--lift-scale, 1.25)); }
+    from { transform: translate(var(--lift-x, 0px), var(--lift-y, 0px)) scale(var(--lift-scale, 1.2)); }
     to { transform: none; }
   }
   @keyframes intro-art {

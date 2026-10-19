@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { useAuth } from "../auth/AuthContext.jsx";
 import { LoginIllustration } from "../components/LoginIllustration.jsx";
@@ -40,6 +40,20 @@ export default function Login() {
   const [submitting, setSubmitting] = useState(false);
   const emailRef = useRef(null);
   const passwordRef = useRef(null);
+  // Intro: the logo starts at the centre of the screen and glides to where the layout puts it.
+  const brandRef = useRef(null);
+  const [liftFrom, setLiftFrom] = useState(null);
+
+  // Measure the logo's final position before the first paint, then start the lift from the screen centre.
+  // The logo is centred in its column, so "novation" collapsing during the intro does not move its centre.
+  useLayoutEffect(() => {
+    if (!playIntro || !brandRef.current) return;
+    const box = brandRef.current.getBoundingClientRect();
+    setLiftFrom({
+      x: Math.round(window.innerWidth / 2 - (box.left + box.width / 2)),
+      y: Math.round(window.innerHeight / 2 - (box.top + box.height / 2)),
+    });
+  }, [playIntro]);
 
   useEffect(() => {
     document.title = "Sign in · SpeedIn";
@@ -76,9 +90,8 @@ export default function Login() {
       className={clsx(
         "bg-login relative flex h-dvh flex-col overflow-hidden text-ink sm:h-auto sm:min-h-dvh",
         "sm:items-center sm:justify-center sm:px-5 sm:py-10 lg:px-10",
-        // Intro offsets: smaller lift and a full-height sheet slide on phones; on PC the logo grows in place.
-        "[--lift-scale:1.08] [--lift-y:40px] [--sheet-y:105%] sm:[--lift-scale:1.25] sm:[--lift-y:118px] sm:[--sheet-y:48px]",
-        "lg:[--lift-scale:1.15] lg:[--lift-y:0px]",
+        // Intro: how much bigger the logo starts, and how the sheet/card slides in (full-height sheet on phones).
+        "[--lift-scale:1.08] [--sheet-y:105%] sm:[--lift-scale:1.2] sm:[--sheet-y:48px]",
       )}
     >
       <div className="flex min-h-0 w-full flex-1 flex-col sm:max-w-[460px] sm:flex-none sm:gap-5 lg:max-w-6xl lg:flex-row lg:items-center lg:gap-16">
@@ -93,7 +106,12 @@ export default function Login() {
           >
             <LoginIllustration className="h-full w-auto max-w-full sm:h-auto sm:w-full sm:max-w-[380px] lg:max-w-[540px]" />
           </div>
-          <div className={clsx("relative flex justify-center", intro("motion-safe:animate-intro-lift"))}>
+          <div
+            ref={brandRef}
+            className={clsx("relative flex justify-center", liftFrom && "motion-safe:animate-intro-lift")}
+            // Measured start offset; dynamic values like this cannot be Tailwind classes.
+            style={liftFrom ? { "--lift-x": `${liftFrom.x}px`, "--lift-y": `${liftFrom.y}px` } : undefined}
+          >
             <h1 className={clsx("m-0 flex leading-none", intro("motion-safe:animate-intro-appear"))}>
               <Wordmark intro={playIntro} className="text-[26px] sm:text-[34px] lg:text-[44px]" />
             </h1>

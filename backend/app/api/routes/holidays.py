@@ -1,10 +1,18 @@
+import uuid
+
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.core.database import SessionDep
 from app.core.deps import CurrentUserDep, require_role
 from app.models.enums import Role
-from app.models.holiday import Holiday, HolidayCreate, HolidayPublic
-from app.services.holiday import HolidayExistsError, create_holiday, list_holidays
+from app.models.holiday import Holiday, HolidayCreate, HolidayPublic, HolidayUpdate
+from app.services.holiday import (
+    HolidayExistsError,
+    HolidayNotFoundError,
+    create_holiday,
+    list_holidays,
+    set_holiday_active,
+)
 
 # Role checks are per route here: everyone can read holidays, only HR can change them
 router = APIRouter(prefix="/holidays", tags=["holidays"])
@@ -29,4 +37,20 @@ def add_holiday(payload: HolidayCreate, session: SessionDep) -> Holiday:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="A holiday already exists on this date",
+        ) from None
+
+
+# Soft delete: {"is_active": false} removes the holiday, {"is_active": true} restores it
+@router.patch(
+    "/{holiday_id}",
+    response_model=HolidayPublic,
+    dependencies=[Depends(require_role(Role.HR))],
+)
+def remove_holiday(holiday_id: uuid.UUID, payload: HolidayUpdate, session: SessionDep) -> Holiday:
+    try:
+        return set_holiday_active(session, holiday_id, payload.is_active)
+    except HolidayNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Holiday not found",
         ) from None

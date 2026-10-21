@@ -1,14 +1,25 @@
+import uuid
+
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.core.database import SessionDep
-from app.core.deps import require_role
+from app.core.deps import CurrentUserDep, require_role
 from app.models.enums import Role
-from app.models.user import Employee, EmployeeBase, EmployeeCreate, EmployeePublic
+from app.models.user import (
+    Employee,
+    EmployeeBase,
+    EmployeeCreate,
+    EmployeePublic,
+    EmployeeStatusUpdate,
+)
 from app.services.employee import (
+    CannotDeactivateSelfError,
     EmailAlreadyExistsError,
+    EmployeeNotFoundError,
     ManagerNotFoundError,
     create_employee,
     list_employees,
+    set_employee_active,
 )
 
 # Every route in this router is HR-only: checked once here, so no route can forget it
@@ -38,4 +49,27 @@ def add_employee(payload: EmployeeCreate, session: SessionDep) -> Employee:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail="reports_to_id must be an active employee",
+        ) from None
+
+
+# Soft delete: {"is_active": false} deactivates the employee, {"is_active": true} restores them.
+# HR-only comes from the router; current_user is needed to stop HR deactivating themselves.
+@router.patch("/{employee_id}", response_model=EmployeePublic)
+def update_employee_status(
+    employee_id: uuid.UUID,
+    payload: EmployeeStatusUpdate,
+    session: SessionDep,
+    current_user: CurrentUserDep,
+) -> Employee:
+    try:
+        return set_employee_active(session, employee_id, payload.is_active, current_user)
+    except EmployeeNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Employee not found",
+        ) from None
+    except CannotDeactivateSelfError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="You cannot deactivate your own account.",
         ) from None

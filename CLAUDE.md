@@ -22,11 +22,11 @@ A clickable HTML prototype was built first to agree on flows. The real app is be
 | Frontend | React 19, Tailwind CSS 4, Parcel 2, react-router-dom 7 |
 | Backend | FastAPI, Uvicorn, SQLModel, SQLAlchemy 2, Pydantic 2, pydantic-settings, PyJWT, bcrypt, psycopg 3 (binary), Alembic, email-validator, tzdata |
 | Dev tools | pytest, httpx, ruff |
-| Database | PostgreSQL (Neon or Supabase), one database per environment |
-| Hosting | Vercel: two projects (frontend root `frontend/`, backend root `backend/`) |
+| Database | PostgreSQL on Supabase: **one shared project** for local dev and production (see safeguards below) |
+| Hosting | Vercel: **one multi-service project** (`vercel.json` at repo root). Frontend at `/`, backend at `/api`, same domain |
 | Tracking | Jira (epics and stories), GitHub |
 
-Dependency versions are pinned in `backend/requirements.txt` and `frontend/package.json`.
+Backend dependencies are managed with **uv** (`backend/pyproject.toml` + `backend/uv.lock`, Python 3.12 via `backend/.python-version`). Frontend versions are pinned in `frontend/package.json`.
 
 ### Known setup gotchas
 
@@ -35,37 +35,52 @@ Dependency versions are pinned in `backend/requirements.txt` and `frontend/packa
 3. Parcel inlines `process.env.API_URL` at build time; restart dev server after changing `.env`.
 4. Alembic folder is a placeholder; can be regenerated with `alembic init alembic`. Use the psycopg 3 URL prefix `postgresql+psycopg://`.
 5. Vercel FastAPI entrypoint: `backend/index.py` exposing `app`.
+6. `vercel.json` rewrites: `/api/(.*)` must stay **before** the catch-all `/(.*)` (first match wins). To verify on first deploy: whether FastAPI receives `/api/health` or `/health` (decides `prefix="/api"` on routers), and whether reloading a react-router path like `/hr` returns 404 (would need an SPA fallback).
+7. Local dev mirrors production with a Parcel proxy: `frontend/.proxyrc` forwards `/api` to `http://localhost:8000`, so the browser sees one origin and cookies behave as in production.
 
 ## Project structure
 
-All code files currently exist as **empty placeholders** (I am writing them).
+Most backend files are still **empty placeholders** (I am writing them). The frontend is being built in a series of PRs against a mock API.
 
 ```
 attendance-app/
 ├── CLAUDE.md
+├── vercel.json                    # multi-service: backend at /api, frontend at /
 ├── docs/schema.md                 # database schema (source of truth)
-├── .github/workflows/ci.yml       # lint + tests + build on PRs to dev/qa/main
+├── docs/api-contract.md           # endpoints the frontend calls (methods, paths, bodies)
+├── .github/workflows/ci.yml       # lint + tests + build on PRs to dev/main
 ├── .github/pull_request_template.md
 ├── backend/
-│   ├── requirements.txt, requirements-dev.txt, pyproject.toml, .env.example
+│   ├── pyproject.toml, uv.lock, .python-version, requirements*.txt, .env.example
 │   ├── index.py                   # Vercel entrypoint
 │   ├── alembic.ini, alembic/ (env.py, script.py.mako, versions/)
 │   ├── app/
 │   │   ├── main.py                # FastAPI app, CORS, routers
 │   │   ├── core/                  # config.py, database.py, security.py, deps.py, time.py
 │   │   ├── models/                # enums.py, user.py, attendance.py, request.py, holiday.py
-│   │   └── api/routes/            # health.py, auth.py (more per epic)
+│   │   └── api/routes/            # health.py, auth.py (more per epic), all under /api
 │   ├── scripts/seed.py            # HR admin, team, holidays
 │   └── tests/                     # conftest.py, test_health.py, test_auth.py, test_time.py
 └── frontend/
-    ├── package.json, .env.example (API_URL)
+    ├── package.json, .env.example (API_URL, USE_MOCK_API), .postcssrc, .proxyrc
     └── src/
-        ├── index.html, main.jsx, App.jsx, styles.css
-        ├── lib/api.js             # fetch wrapper, credentials: "include"
-        ├── auth/AuthContext.jsx
-        ├── components/            # AppHeader.jsx, ProtectedRoute.jsx
-        └── pages/                 # Login.jsx, EmployeeHome.jsx, HrHome.jsx
+        ├── index.html, main.jsx, App.jsx (routes), styles.css (Tailwind 4 + design tokens, light/dark)
+        ├── lib/api.js             # fetch wrapper, credentials: "include", ApiError
+        ├── lib/services/          # one module per API area; picks real API or mock via USE_MOCK_API
+        ├── lib/mock/              # in-browser mock API + seed data (until the backend endpoints exist)
+        ├── lib/domain/            # enums, time zone helpers, business rules (+ node:test tests)
+        ├── auth/AuthContext.jsx   # session: me / login / logout (clears the React Query cache)
+        ├── theme/ThemeContext.jsx # system / light / dark preference
+        ├── hooks/                 # useAttendance (React Query), useNow (live clock)
+        ├── components/            # AppLayout, ProtectedRoute, LoginIllustration, layout/ (Sidebar, BottomNav),
+        │                          # home/ (CheckInCard, TodayTimes, HoursChart, MonthStats),
+        │                          # attendance/ (MonthCalendar, DayDetail, DailyLog), leave/ (LeaveForm, UpcomingHolidays),
+        │                          # hr/ (HrTabs, TeamMemberCard, RequestCard, AddEmployeeForm),
+        │                          # ui/ (Button, TextField, Fields: SelectField, DateField, TextAreaField, Segmented, ...)
+        └── pages/                 # Login, EmployeeHome, Attendance, Leave, Profile, HrToday (/hr), HrApprovals (/hr/approvals), HrTeam (/hr/team), HrHolidays (/hr/holidays), NotFound
 ```
+
+Frontend commands (in `frontend/`): `npm run dev` (port 1234), `npm run build`, `npm test` (domain rules). Server data goes through React Query hooks in `src/hooks/`; navigation is a sidebar on PC (lg+) and a bottom tab bar on phones. Styling is **Tailwind only**: use the tokens in `styles.css` (`bg-surface`, `text-ink`, `text-accent-ink`, ...), not raw hex values.
 
 ## Database schema
 
@@ -94,12 +109,16 @@ Design decisions:
 ## Business rules
 
 - Office hours 10:30 to 19:30. **Late** = check-in after 10:30 + 30 min grace = after **11:00** (11:00 exactly is on time). Configurable: OFFICE_START, OFFICE_END, LATE_BUFFER_MIN.
-- **WFH limit**: 2 free WFH days per employee per calendar month (half WFH = 0.5). When used = 2, any further WFH creates a PENDING request needing approval (reason required). Configurable: WFH_FREE_DAYS_PER_MONTH.
+- **WFH limit**: 2 free WFH days per employee per calendar month (half WFH = 0.5). When used = 2, any further WFH creates a PENDING request needing approval (reason optional). Configurable: WFH_FREE_DAYS_PER_MONTH.
 - Leave always needs approval. Show note: apply at least 1 day in advance (not hard-enforced yet; idea: block same-day for Casual/Earned, allow Sick).
 - Half-day counts: half leave + half office/WFH count 0.5 each side in all totals.
 - On a half-day leave day the employee can still check in for the working half; no Late tag that day.
+- Check-in is allowed any day (including weekends and holidays) and at any time (including after office hours). Weekend and holiday days do **not** count toward the WFH limit and are **never** marked late. `work_date` is the Pune date (`core/time.office_today()`), never the server's UTC date.
 - Weekends and holidays are skipped in leave/WFH date ranges.
-- Approval routing: to the employee's `reports_to` manager; if none, to HR. (Only HR exists today.)
+- Request status is **never stored in attendance**. Pending/rejected days in history are derived from the `request` table ("Awaiting approval", "Rejected"); attendance rows exist only once a request is APPROVED (or the employee checks in).
+- On approval, the backend creates or updates one attendance row per working day in the range and sets `request_id`. If a day already has a row: half-day leave and WFH update the leave/work-mode fields and keep `in_time`; full leave is rejected if the employee already checked in that day.
+- HR decides with APPROVED or REJECTED only; no decision comment. `decided_by_id` and `decided_at` are set by the server.
+- Approval routing (for now): **only HR** lists and decides requests, so `decided_by_id` is always an HR employee. Enforced in the app (HR-only routes + a role check in `decide_request`), because a foreign key cannot check the referenced employee's role. Later: let a `reports_to` manager decide for their direct reports.
 - Role checks must be enforced **in the backend** on every route, not only by hiding UI.
 - Managers and HR are also employees (they check in, request leave, etc.). Navigation is layered: employee screens for everyone, + team screens for MANAGER, + everything for HR.
 
@@ -107,9 +126,9 @@ Design decisions:
 
 - Email + password. Passwords hashed with bcrypt.
 - JWT (PyJWT, HS256) in an **httpOnly cookie**; frontend uses `credentials: "include"`. Bearer header fallback for tests/tools.
-- Endpoints planned: POST /auth/login, POST /auth/logout, GET /auth/me.
+- Endpoints planned: POST /api/auth/login, POST /api/auth/logout, GET /api/auth/me.
 - JWT_SECRET must be 32+ random chars outside local.
-- Cookies across two different `*.vercel.app` domains get blocked by browsers. Plan: custom domains on one parent (app.company.com + api.company.com), COOKIE_DOMAIN=.company.com, SameSite=lax, Secure=true.
+- Frontend and backend share one domain (Vercel services), so the auth cookie is first-party: no custom domain needed, `COOKIE_DOMAIN` stays empty, SameSite=lax, Secure=true in production. No CORS needed in production (same origin); `CORS_ORIGINS` only matters for local tools.
 
 ## Features (from the prototype)
 
@@ -129,15 +148,20 @@ Design decisions:
 - Holidays: add/remove, upcoming/past.
 - Team: list, add employee (temporary password).
 
-Visual direction: navy `#1F4E79` header and sky `#DDEBF7` sub-header (from the original Excel), IBM Plex Sans / IBM Plex Sans Condensed. Status colours: office green, WFH teal, leave rose, late amber, absent grey.
+Visual direction: new "SpeedIn" design (replaces the prototype's navy/sky look). Rubik for UI text, Michroma for the speed-lines logo, deep purple palette, light and dark themes. Tokens live in `frontend/src/styles.css`.
 
 ## Git, CI/CD and deployment
 
-- Branches: `feature/ATT-<n>-short-name` → `dev` → `qa` → `main` (production, linked to Vercel).
-- PRs required into dev/qa/main; CI must pass; 1+ approval. Hotfix from main, then merge main back into qa and dev.
+- **One deployed environment** (production). No qa environment.
+- Branches: `feature/ATT-<n>-short-name` → `dev` (integration) → `main` (production, linked to Vercel). A PR `dev` → `main` is a release.
+- PRs required into dev/main; CI must pass. Approvals: 0 while working solo (GitHub blocks approving your own PR), 1+ once a second developer joins. Hotfix from main, then merge main back into dev.
 - CI (GitHub Actions): backend `ruff check .` + `pytest`; frontend `npm ci` + `npm run build`.
-- Vercel: production branch `main`; `dev` and `qa` get branch domains + branch-specific env vars (Pro plan allows one custom environment, e.g. qa). Separate DB per environment.
-- Run `alembic upgrade head` per environment on merge (GitHub Actions with DB URL secrets).
+- Vercel: one multi-service project, production branch `main` only. Preview deploys for other branches disabled via Ignored Build Step. One set of env vars (`ENVIRONMENT=production`, transaction pooler `DATABASE_URL` on port 6543, own `JWT_SECRET`, `COOKIE_SECURE=true`, `API_URL=/api`).
+- Database: one shared Supabase project used by local dev and production. Safeguards:
+  1. pytest must **never** connect to Supabase; tests use their own DB, and `conftest.py` refuses to run if `DATABASE_URL` contains `supabase.com`.
+  2. `pg_dump` backup before every `alembic upgrade head` (free plan has no self-serve restore). Backup files stay out of git.
+  3. Local test data uses seeded `test.*` users so it can be removed before go-live. After go-live, running locally means acting on real data.
+- Local dev and Alembic use the session pooler URL (port 5432).
 - Serverless limits on Vercel: no persistent disk, no always-on background tasks (use Vercel Cron for auto check-out / reminders), cold starts.
 - Include Jira key (ATT-12) in branch, commits and PR titles; GitHub for Jira app links them.
 
@@ -151,7 +175,8 @@ Suggested sprints: (1) epics 1 + 2, (2) epic 3, (3) epics 4, 5, 7, (4) epics 6 +
 
 ## Current status and next steps
 
-- Done: prototype, schema design (`docs/schema.md`), Jira backlog, empty project skeleton with dependencies.
-- Next (me): write SQLModel models from `docs/schema.md` (enums.py first), then config/database/security, Alembic initial migration, auth routes, then login page.
+- Done: prototype, schema design (`docs/schema.md`), Jira backlog, empty project skeleton with dependencies, Supabase project + `backend/.env`, `backend/.env.example`, `app/core/config.py`, uv setup.
+- In progress: git repo at the project root (not `backend/`), GitHub remote, `dev` + `main` branches.
+- Next (me): `database.py`, SQLModel models from `docs/schema.md` (enums.py first), security, Alembic initial migration, auth routes, then login page.
 - Ask Claude Code to: review each file as I finish it, explain issues, check models match `docs/schema.md`, and help write tests.
 

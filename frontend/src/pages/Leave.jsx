@@ -1,0 +1,51 @@
+import { useEffect } from "react";
+import { Link } from "react-router-dom";
+
+import { LeaveForm } from "../components/leave/LeaveForm.jsx";
+import { UpcomingHolidays } from "../components/leave/UpcomingHolidays.jsx";
+
+/**
+ * Leave screen (Leave + Desktop Leave artboards): apply for leave or WFH, upcoming holidays.
+ * "My requests" and leave balances need backend endpoints that don't exist yet
+ * (GET /api/requests/me, balances), so they show a short note instead of made-up data.
+ */
+export default function Leave() {
+  useEffect(() => {
+    document.title = "Leave · SpeedIn";
+  }, []);
+
+  return (
+    <div className="flex flex-col gap-5 lg:gap-6">
+      <header>
+        <h1 className="m-0 text-2xl font-extrabold tracking-[-0.02em] lg:text-[28px]">Leave</h1>
+        <p className="m-0 mt-1 text-sm text-ink-muted">Apply for leave or work from home. HR approves every request.</p>
+      </header>
+
+      <div className="flex flex-col gap-5 lg:grid lg:grid-cols-[minmax(340px,1fr)_minmax(320px,1fr)] lg:items-start xl:grid-cols-[minmax(380px,1.1fr)_minmax(340px,1fr)]">
+        <section aria-labelledby="apply-heading" className="flex flex-col gap-4 rounded-3xl border border-line bg-surface p-5 lg:p-6">
+          <h2 id="apply-heading" className="m-0 text-base font-bold">
+            Apply for leave or WFH
+          </h2>
+          <LeaveForm />
+        </section>
+
+        <div className="flex flex-col gap-5">
+          <section aria-labelledby="my-requests-heading" className="flex flex-col gap-2 rounded-3xl border border-line bg-surface p-5">
+            <h2 id="my-requests-heading" className="m-0 text-base font-bold">
+              My requests
+            </h2>
+            <p className="m-0 text-sm text-ink-muted">
+              Your request list and leave balances are coming soon. Meanwhile, days you&rsquo;ve requested show as
+              &ldquo;Awaiting approval&rdquo; or &ldquo;Request rejected&rdquo; on your{" "}
+              <Link to="/attendance" className="font-semibold text-accent-ink">
+                attendance calendar
+              </Link>
+              .
+            </p>
+          </section>
+          <UpcomingHolidays />
+        </div>
+      </div>
+    </div>
+  );
+}

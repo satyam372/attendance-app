@@ -60,7 +60,7 @@ Matches `backend/app/api/routes/attendance.py`. Every signed-in employee (manage
 - If an approved request (or an HR correction) already set today's work mode, check-in uses that mode whatever is sent.
 - Not built yet in the backend: HR attendance sheet for all employees and HR corrections (`AttendanceUpdate` exists as a model, no route yet).
 
-## Requests (raising: in use on the Leave screen)
+## Requests (in use: Leave screen and HR Approvals)
 
 Matches `backend/app/api/routes/requests.py`.
 
@@ -75,6 +75,7 @@ Combination rules (`RequestBase.check_combination`, mirrored in `frontend/src/li
 - Leave types need `leave_category`; WFH types must not have one.
 - An optional holiday is a one-date `FULL_LEAVE` with `leave_category: OPTIONAL_HOLIDAY` and the holiday's `holiday_id`.
 - Every request starts PENDING (WFH too). Pending and rejected days appear in `/attendance/history` as `AWAITING_APPROVAL` / `REJECTED`.
+- Approving writes one attendance row per working day of the request (`request_id` set). Full-day leave is refused (409) if the person already checked in on one of those days; half-day leave keeps an existing check-in.
 
 **Not available yet (requested):** `GET /api/requests/me` (the employee's own requests) and leave balances.
 

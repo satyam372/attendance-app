@@ -14,3 +14,16 @@ export function createRequest(body) {
   if (USE_MOCK_API) return mock.createRequest(body);
   return apiFetch("/requests", { method: "POST", body });
 }
+
+/** GET /requests?status=PENDING&status=… (HR) → RequestWithEmployee[], newest first. */
+export function listRequests(statuses = []) {
+  if (USE_MOCK_API) return mock.listRequests(statuses);
+  const query = statuses.map((s) => `status=${encodeURIComponent(s)}`).join("&");
+  return apiFetch(`/requests${query ? `?${query}` : ""}`);
+}
+
+/** POST /requests/{id}/decision (HR) with { status: "APPROVED" | "REJECTED" } → RequestPublic. */
+export function decideRequest(id, status) {
+  if (USE_MOCK_API) return mock.decideRequest(id, status);
+  return apiFetch(`/requests/${id}/decision`, { method: "POST", body: { status } });
+}

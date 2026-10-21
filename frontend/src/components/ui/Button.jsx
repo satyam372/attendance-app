@@ -6,6 +6,7 @@ const VARIANTS = {
   primary:
     "bg-primary text-primary-ink shadow-[0_8px_24px_rgb(0_0_0/0.18)] hover:bg-primary-hover hover:-translate-y-px hover:shadow-[0_12px_28px_rgb(0_0_0/0.26)] active:translate-y-0",
   secondary: "border border-line-strong bg-surface text-ink hover:border-focus",
+  danger: "border border-line-strong bg-surface text-absent hover:border-absent",
   ghost: "text-ink-muted hover:bg-field hover:text-ink",
 };
 

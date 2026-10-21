@@ -3,6 +3,7 @@ import { CalendarClock, ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { StatusDot } from "../components/attendance/StatusChip.jsx";
+import { HrTabs } from "../components/hr/HrTabs.jsx";
 import { TeamMemberCard } from "../components/hr/TeamMemberCard.jsx";
 import { ErrorAlert } from "../components/ui/Alert.jsx";
 import { Button } from "../components/ui/Button.jsx";
@@ -67,6 +68,7 @@ export default function HrToday() {
 
   return (
     <div className="flex flex-col gap-5 lg:gap-6">
+      <HrTabs />
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="m-0 text-2xl font-extrabold tracking-[-0.02em] lg:text-[28px]">{isToday ? "Team today" : "Team on this day"}</h1>

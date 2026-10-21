@@ -87,6 +87,19 @@ Combination rules (`RequestBase.check_combination`, mirrored in `frontend/src/li
 
 Not available yet: deleting a holiday.
 
+## HR dashboard (in use: HR "Team today")
+
+Matches `backend/app/api/routes/dashboard.py`. HR only (403 for everyone else).
+
+| Method | Path | Response |
+|---|---|---|
+| GET | `/api/dashboard/today?day=YYYY-MM-DD` | `DaySummary`: `work_date`, `is_working_day`, `team_size`, `in_office`, `wfh`, `hybrid`, `on_leave`, `half_day_leave`, `not_checked_in`, `late` |
+| GET | `/api/dashboard/today/team?day=YYYY-MM-DD` | `TeamMemberDay[]`, one per active employee who had joined by `day`, sorted by name: `employee_id`, `name`, `status` (DayStatus), `work_mode`, `leave_half`, `in_time`, `out_time`, `punctuality`, `attendance_id` |
+
+- Leave `day` out for today: the server decides "today" in Pune time. A future `day` is a `422` "day cannot be in the future".
+- Every employee is in exactly one bucket, so `in_office + wfh + hybrid + on_leave + half_day_leave + not_checked_in == team_size`; `late` is a subset of the checked-in people.
+- An approved WFH counts as working only once the person checks in.
+
 ## Employees (planned)
 
 | Method | Path | Who | Notes |

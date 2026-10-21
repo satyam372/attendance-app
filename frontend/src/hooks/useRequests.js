@@ -15,3 +15,26 @@ export function useCreateRequest() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["attendance"] }),
   });
 }
+
+/** HR request lists. statuses: e.g. ["PENDING"] or ["APPROVED", "REJECTED"]. */
+export function useRequestList(statuses, { enabled = true } = {}) {
+  return useQuery({
+    queryKey: ["requests", ...statuses],
+    queryFn: () => requests.listRequests(statuses),
+    enabled,
+    refetchInterval: 60_000,
+  });
+}
+
+/** Approve or reject; refresh request lists, the HR dashboard and attendance. */
+export function useDecideRequest() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, status }) => requests.decideRequest(id, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["requests"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["attendance"] });
+    },
+  });
+}

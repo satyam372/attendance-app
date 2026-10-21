@@ -101,10 +101,14 @@ Matches `backend/app/api/routes/dashboard.py`. HR only (403 for everyone else).
 - Every employee is in exactly one bucket, so `in_office + wfh + hybrid + on_leave + half_day_leave + not_checked_in == team_size`; `late` is a subset of the checked-in people.
 - An approved WFH counts as working only once the person checks in.
 
-## Employees (planned)
+## Employees (in use: HR People)
 
-| Method | Path | Who | Notes |
+Matches `backend/app/api/routes/employees.py`. HR only.
+
+| Method | Path | Body | Response |
 |---|---|---|---|
-| GET | `/api/employees` | HR | All employees |
-| POST | `/api/employees` | HR | Body `{ "name", "email", "role", "temporary_password" }`. Sets `must_change_password`. `409` duplicate email |
-| PATCH | `/api/employees/{id}` | HR | `name`, `role`, `reports_to_id`, `is_active` |
+| GET | `/api/employees` | none | `EmployeeBase[]`: `name`, `email`, `role`, `reports_to_id`, `is_active`, sorted by name (active and inactive) |
+| POST | `/api/employees` | `EmployeeCreate`: `name`, `email`, `role`, `reports_to_id?`, `is_active?`, `password` (8 to 72 characters, at most 72 bytes) | `201 EmployeePublic` with `must_change_password: true`. `409` "An employee with this email already exists"; `422` "reports_to_id must be an active employee" |
+
+- The frontend generates the temporary password (no look-alike characters) and shows it once for HR to share privately.
+- **Not available yet:** employee `id` in the list (needed to choose a "reports to" manager), editing or deactivating an employee, and changing a password.

@@ -5,7 +5,7 @@ import { ProtectedRoute, PublicOnlyRoute } from "./components/ProtectedRoute.jsx
 import { Role } from "./lib/domain/enums.js";
 import Attendance from "./pages/Attendance.jsx";
 import EmployeeHome from "./pages/EmployeeHome.jsx";
-import HrHome from "./pages/HrHome.jsx";
+import HrToday from "./pages/HrToday.jsx";
 import Leave from "./pages/Leave.jsx";
 import Login from "./pages/Login.jsx";
 import NotFound from "./pages/NotFound.jsx";
@@ -25,7 +25,7 @@ export default function App() {
           <Route path="/leave" element={<Leave />} />
           <Route path="/profile" element={<Profile />} />
           <Route element={<ProtectedRoute roles={[Role.HR]} />}>
-            <Route path="/hr" element={<HrHome />} />
+            <Route path="/hr" element={<HrToday />} />
           </Route>
         </Route>
       </Route>

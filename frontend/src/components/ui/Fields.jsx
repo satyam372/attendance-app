@@ -85,7 +85,7 @@ export function Segmented({ legend, name, value, options, onChange, className })
   return (
     <fieldset className={clsx("m-0 min-w-0 border-0 p-0", className)}>
       <legend className="mb-2 p-0 text-[13px] font-semibold text-ink-soft">{legend}</legend>
-      <div className={clsx("grid gap-1 rounded-2xl bg-field p-1", options.length === 3 ? "grid-cols-3" : "grid-cols-2")}>
+      <div className={clsx("grid gap-1 rounded-2xl bg-field p-1", { 2: "grid-cols-2", 3: "grid-cols-3", 4: "grid-cols-4" }[options.length] ?? "grid-cols-2")}>
         {options.map((option) => (
           <label
             key={option.value}

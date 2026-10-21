@@ -66,14 +66,14 @@ export default function Profile() {
       </Card>
 
       <Button
-        variant="secondary"
+        variant="danger"
         size="lg"
         loading={signingOut}
         onClick={async () => {
           setSigningOut(true);
           await logout();
         }}
-        className="w-full text-checkout sm:w-auto sm:self-start"
+        className="w-full sm:w-auto sm:self-start"
       >
         {!signingOut && <LogOut className="size-5" aria-hidden="true" />}
         Sign out

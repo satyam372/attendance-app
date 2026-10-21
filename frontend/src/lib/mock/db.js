@@ -7,7 +7,7 @@ import { uuid as randomId } from "./uuid.js";
 // so state survives reloads; bump STORAGE_KEY when the seed shape changes.
 // IDs are UUID strings, like the backend (uuid4).
 
-const STORAGE_KEY = "speedin-mock-db-v3";
+const STORAGE_KEY = "speedin-mock-db-v5";
 
 // Demo-only password for every seeded account (mock mode only, never a real credential).
 export const DEMO_PASSWORD = "speedin123";
@@ -47,6 +47,8 @@ function seed() {
       { id: uuid(108), name: "Dussehra", holiday_date: "2026-10-20", is_optional: false },
       { id: uuid(109), name: "Diwali (Padwa)", holiday_date: "2026-11-09", is_optional: false },
       { id: uuid(110), name: "Bhai Dooj", holiday_date: "2026-11-11", is_optional: false },
+      { id: uuid(112), name: "Dhanteras (optional)", holiday_date: "2026-11-06", is_optional: true },
+      { id: uuid(113), name: "Guru Nanak Jayanti (optional)", holiday_date: "2026-11-24", is_optional: true },
       { id: uuid(111), name: "Christmas", holiday_date: "2026-12-25", is_optional: false },
     ],
     attendance: [],
@@ -102,6 +104,38 @@ function seedAttendance(db) {
     }
   });
   db.attendance = rows;
+  return seedRequests(db);
+}
+
+/** A few requests for the HR Approvals screen, relative to today: two pending, two decided. */
+function seedRequests(db) {
+  const today = toDateKey();
+  const closed = new Set(db.holidays.filter((h) => !h.is_optional).map((h) => h.holiday_date));
+  const workingAfter = (day, n) => {
+    let d = day;
+    for (let found = 0; found < n; ) {
+      d = addDays(d, 1);
+      if (!isWeekend(d) && !closed.has(d)) found += 1;
+    }
+    return d;
+  };
+  const byEmail = (start) => db.employees.find((e) => e.email.startsWith(start)).id;
+  const hr = byEmail("hr");
+  const base = { holiday_id: null, decided_by_id: null, decided_at: null, leave_half: null };
+  db.requests = [
+    { ...base, id: randomId(), employee_id: byEmail("poorva"), request_type: "FULL_LEAVE", leave_category: "CASUAL",
+      from_date: workingAfter(today, 3), to_date: workingAfter(today, 4), reason: "Cousin's wedding", status: "PENDING",
+      created_at: new Date(Date.now() - 26 * 3600e3).toISOString() },
+    { ...base, id: randomId(), employee_id: byEmail("snehal"), request_type: "FULL_WFH", leave_category: null,
+      from_date: workingAfter(today, 1), to_date: workingAfter(today, 1), reason: "Internet technician visiting at home", status: "PENDING",
+      created_at: new Date(Date.now() - 3 * 3600e3).toISOString() },
+    { ...base, id: randomId(), employee_id: byEmail("vishwajit"), request_type: "HALF_DAY_LEAVE", leave_category: "SICK", leave_half: "SECOND_HALF",
+      from_date: workingAfter(today, 2), to_date: workingAfter(today, 2), reason: "Doctor's appointment", status: "APPROVED",
+      decided_by_id: hr, decided_at: new Date(Date.now() - 20 * 3600e3).toISOString(), created_at: new Date(Date.now() - 50 * 3600e3).toISOString() },
+    { ...base, id: randomId(), employee_id: byEmail("satyam"), request_type: "FULL_LEAVE", leave_category: "EARNED",
+      from_date: workingAfter(today, 6), to_date: workingAfter(today, 10), reason: "Family trip", status: "REJECTED",
+      decided_by_id: hr, decided_at: new Date(Date.now() - 44 * 3600e3).toISOString(), created_at: new Date(Date.now() - 70 * 3600e3).toISOString() },
+  ];
   return db;
 }
 

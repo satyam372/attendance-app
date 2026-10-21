@@ -4,7 +4,7 @@ The endpoints the frontend calls. Data shapes and enums follow [`schema.md`](sch
 
 Until an endpoint is used by a screen, the frontend can use an in-browser mock with the same signatures (`frontend/src/lib/mock/`, enabled with `USE_MOCK_API=true`). The services in `frontend/src/lib/services/` are the only place that calls the API.
 
-**Status:** every endpoint in the "Implemented" tables exists in the backend (`backend/app/api/routes/`). The frontend uses Auth so far. "Not built yet" lists what the screens still need.
+**Status:** every endpoint in the "Implemented" tables exists in the backend (`backend/app/api/routes/`). The frontend uses Auth, Attendance, Requests, Holidays, Employees and the HR dashboard. "Not built yet" lists what the screens still need.
 
 ## Conventions
 
@@ -43,7 +43,7 @@ Until an endpoint is used by a screen, the frontend can use an in-browser mock w
 // RequestWithEmployee (HR list) = Request + "employee_name": "Poorva Shipugade"
 
 // Holiday (HolidayPublic)
-{ "id": "e7d3…", "name": "Dussehra", "holiday_date": "2026-10-20", "is_optional": false }
+{ "id": "e7d3…", "name": "Dussehra", "holiday_date": "2026-10-20", "is_optional": false, "is_active": true }
 
 // DaySummary (HR "Today" cards). Every active employee is in exactly one bucket; late is a subset
 { "work_date": "2026-10-14", "is_working_day": true, "team_size": 8, "in_office": 2, "wfh": 1, "hybrid": 1,
@@ -92,6 +92,12 @@ Not built yet:
 | GET | `/api/requests?status=PENDING` | HR | `status` optional and repeatable: `?status=APPROVED&status=REJECTED` for the Decided list | `200 RequestWithEmployee[]`, newest first |
 | POST | `/api/requests/{id}/decision` | HR | `{ "status": "APPROVED" \| "REJECTED" }` | `200 Request`. Approval writes the attendance rows (working days only) in the same transaction. `404`, `409` "This request has already been decided.", `409` full-day leave on a day the employee already checked in |
 
+Combination rules (`RequestBase.check_combination`, mirrored in `frontend/src/lib/domain/requests.js`):
+- `to_date >= from_date`; half-day types (`HALF_DAY_LEAVE`, `HALF_LEAVE_HALF_WFH`) cover one date and need `leave_half`.
+- Leave types need `leave_category`; WFH types must not have one.
+- An optional holiday is a one-date `FULL_LEAVE` with `leave_category: OPTIONAL_HOLIDAY` and the holiday's `holiday_id`.
+- Every request starts PENDING (WFH too).
+
 Only HR decides for now (`decided_by_id` is always HR). Pending and rejected requests show in history as `AWAITING_APPROVAL` / `REJECTED`.
 
 Not built yet:
@@ -101,13 +107,13 @@ Not built yet:
 
 | Method | Path | Who | Body | Response |
 |---|---|---|---|---|
-| GET | `/api/holidays` | any | none | `200 Holiday[]`, all holidays sorted by date (no year filter yet) |
-| POST | `/api/holidays` | HR | `{ "name", "holiday_date", "is_optional" }` (`is_optional` defaults to false) | `201 Holiday`. `409` "A holiday already exists on this date" |
+| GET | `/api/holidays` | any | none | `200 Holiday[]`, active holidays only, sorted by date (no year filter yet) |
+| POST | `/api/holidays` | HR | `{ "name", "holiday_date", "is_optional" }` (`is_optional` defaults to false) | `201 Holiday`. `409` "A holiday already exists on this date" (an active one). Adding a date whose holiday was removed restores that row with the new name and `is_optional` |
+| PATCH | `/api/holidays/{id}` | HR | `{ "is_active": false }` removes, `{ "is_active": true }` restores (required) | `200 Holiday`. `404` "Holiday not found" |
 
 Optional holidays are working days; an employee takes one with a FULL_LEAVE request, `leave_category: "OPTIONAL_HOLIDAY"` and its `holiday_id`.
 
-Not built yet:
-- `DELETE /api/holidays/{id}` (HR, `204`)
+Removing is a soft delete: the row stays so optional-holiday requests keep a valid `holiday_id`, but a removed holiday is skipped everywhere (it is a working day again, and cannot be requested as an optional holiday).
 
 ## Employees
 
@@ -119,6 +125,8 @@ Not built yet:
 
 Deactivation is a soft delete: the row and its attendance history stay. The employee's session stops working on their next request (`401`), and logging in returns `403`.
 
+When HR adds an employee, the frontend generates the temporary password (no look-alike characters) and shows it once for HR to share privately.
+
 Not built yet:
 - Editing `name`, `role`, `reports_to_id` (could extend the same `PATCH`)
 
@@ -127,7 +135,11 @@ Not built yet:
 | Method | Path | Who | Query | Response |
 |---|---|---|---|---|
 | GET | `/api/dashboard/today` | HR | `day=YYYY-MM-DD` optional, default today in Pune; future dates are `422` | `200 DaySummary` |
-| GET | `/api/dashboard/today/team` | HR | same | `200 TeamMemberDay[]`, one per active employee, sorted by name |
+| GET | `/api/dashboard/today/team` | HR | same | `200 TeamMemberDay[]`, one per active employee who had joined by `day`, sorted by name |
+
+- A future `day` is `422` "day cannot be in the future".
+- Every employee is in exactly one bucket, so `in_office + wfh + hybrid + on_leave + half_day_leave + not_checked_in == team_size`; `late` is a subset of the checked-in people.
+- An approved WFH counts as working only once the person checks in.
 
 ## Other
 

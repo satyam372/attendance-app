@@ -5,6 +5,7 @@ import { Punctuality, punctuality } from "../domain/rules.js";
 import { addDays, isWeekend, minutesBetween, minutesInOfficeTz, monthOf, parseHm, toDateKey } from "../domain/time.js";
 import { currentEmployee } from "./auth.js";
 import { delay, getDb, saveDb } from "./db.js";
+import { openRequestStatusByDay } from "./requests.js";
 import { uuid } from "./uuid.js";
 
 // Mock of /api/attendance/*. Mirrors backend/app/services/attendance.py and
@@ -144,6 +145,7 @@ export async function getHistory({ year, month } = {}) {
   if (first > last) return [];
 
   const holidays = new Map(db.holidays.map((h) => [h.holiday_date, h]));
+  const requestStatus = openRequestStatusByDay(employee.id, first, last);
   const days = [];
   for (let day = last; day >= first; day = addDays(day, -1)) {
     const row = dayRow(db, employee.id, day);
@@ -157,6 +159,8 @@ export async function getHistory({ year, month } = {}) {
     else if (row?.leave_portion === LeavePortion.HALF) status = "HALF_DAY_LEAVE";
     else if (row?.work_mode) status = row.work_mode;
     else if (closedHoliday) status = "HOLIDAY";
+    else if (workingDay && requestStatus.get(day) === "PENDING") status = "AWAITING_APPROVAL";
+    else if (workingDay && requestStatus.get(day) === "REJECTED") status = "REJECTED";
     else status = day === today ? "NOT_CHECKED_IN" : "ABSENT";
 
     const inTime = row?.in_time ?? null;

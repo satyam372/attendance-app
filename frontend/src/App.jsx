@@ -6,6 +6,8 @@ import { Role } from "./lib/domain/enums.js";
 import Attendance from "./pages/Attendance.jsx";
 import EmployeeHome from "./pages/EmployeeHome.jsx";
 import HrApprovals from "./pages/HrApprovals.jsx";
+import HrHolidays from "./pages/HrHolidays.jsx";
+import HrTeam from "./pages/HrTeam.jsx";
 import HrToday from "./pages/HrToday.jsx";
 import Leave from "./pages/Leave.jsx";
 import Login from "./pages/Login.jsx";
@@ -28,6 +30,8 @@ export default function App() {
           <Route element={<ProtectedRoute roles={[Role.HR]} />}>
             <Route path="/hr" element={<HrToday />} />
             <Route path="/hr/approvals" element={<HrApprovals />} />
+            <Route path="/hr/team" element={<HrTeam />} />
+            <Route path="/hr/holidays" element={<HrHolidays />} />
           </Route>
         </Route>
       </Route>

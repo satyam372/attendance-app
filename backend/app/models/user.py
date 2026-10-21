@@ -49,3 +49,9 @@ class EmployeePublic(EmployeeBase):
     id: uuid.UUID
     must_change_password: bool
     created_at: datetime
+
+
+class EmployeeStatusUpdate(SQLModel):
+    """Body of PATCH /api/employees/{id}: false deactivates the employee, true restores them."""
+
+    is_active: bool

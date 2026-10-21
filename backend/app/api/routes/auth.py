@@ -5,11 +5,14 @@ from app.core.database import SessionDep
 from app.core.deps import CurrentUserDep
 from app.core.security import COOKIE_NAME, create_access_token
 from app.models.user import Employee, EmployeePublic
-from app.schemas.auth import LoginRequest
+from app.schemas.auth import ChangePasswordRequest, LoginRequest
 from app.services.auth import (
     InactiveAccountError,
     InvalidCredentialsError,
+    SamePasswordError,
+    WrongPasswordError,
     authenticate,
+    change_password,
 )
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -64,3 +67,23 @@ def logout(response: Response) -> None:
 @router.get("/me", response_model=EmployeePublic)
 def me(current_user: CurrentUserDep) -> Employee:
     return current_user
+
+
+# Only the logged-in user's own password: the user comes from the cookie, not the body.
+# The session cookie is left as is, so the user stays logged in after the change.
+@router.post("/change-password", response_model=EmployeePublic)
+def change_password_route(
+    payload: ChangePasswordRequest, session: SessionDep, current_user: CurrentUserDep
+) -> Employee:
+    try:
+        return change_password(session, current_user, payload.current_password, payload.new_password)
+    except WrongPasswordError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password is incorrect",
+        ) from None
+    except SamePasswordError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Choose a password different from the current one",
+        ) from None

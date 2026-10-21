@@ -56,7 +56,12 @@ def create_request(session: Session, employee: Employee, data: RequestCreate) ->
 
     if data.holiday_id is not None:
         holiday = session.get(Holiday, data.holiday_id)
-        if holiday is None or not holiday.is_optional or holiday.holiday_date != data.from_date:
+        if (
+            holiday is None
+            or not holiday.is_active  # a removed holiday cannot be requested
+            or not holiday.is_optional
+            or holiday.holiday_date != data.from_date
+        ):
             raise InvalidOptionalHolidayError
 
     overlap = session.exec(

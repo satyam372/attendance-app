@@ -16,13 +16,13 @@ function HolidayRow({ holiday, past }) {
   const [y, m, d] = holiday.holiday_date.split("-").map(Number);
   const month = new Date(Date.UTC(y, m - 1, d)).toLocaleDateString("en-IN", { month: "short", timeZone: "UTC" });
   return (
-    <li className={clsx("flex items-center gap-3.5 border-b border-line/70 py-3 last:border-b-0", past && "opacity-55")}>
-      <span className="flex w-12 shrink-0 flex-col items-center rounded-xl bg-accent-soft py-1.5 text-accent-ink">
+    <li className="flex items-center gap-3.5 border-b border-line/70 py-3 last:border-b-0">
+      <span className={clsx("flex w-12 shrink-0 flex-col items-center rounded-xl py-1.5", past ? "bg-field text-ink-muted" : "bg-accent-soft text-accent-ink")}>
         <span className="text-lg leading-none font-extrabold tabular-nums">{d}</span>
         <span className="text-[11px] font-semibold">{month}</span>
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-semibold">{holiday.name}</span>
+        <span className={clsx("block truncate text-sm font-semibold", past && "text-ink-soft")}>{holiday.name}</span>
         <span className="block text-xs text-ink-muted">
           {shortWeekday(holiday.holiday_date)} {y}
           {isWeekend(holiday.holiday_date) ? " · falls on a weekend" : ""}

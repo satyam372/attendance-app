@@ -74,18 +74,19 @@ export default function Attendance() {
         <>
           <dl className="m-0 grid grid-cols-4 gap-2 lg:grid-cols-5 lg:gap-3.5" aria-label={`Summary for ${monthLabel(month)}`}>
             {cards.map(({ label, value, category, tone, pcOnly }) => (
+              // Only dt + dd inside each group (valid definition list); value above the label on phones
               <div
                 key={label}
                 className={clsx(
-                  "flex-col gap-0.5 rounded-2xl border border-line bg-surface px-2.5 py-3 lg:flex-row lg:items-center lg:gap-3 lg:rounded-[18px] lg:px-4.5 lg:py-4",
+                  "flex-col-reverse gap-0.5 rounded-2xl border border-line bg-surface px-2.5 py-3 lg:flex-col lg:gap-1 lg:rounded-[18px] lg:px-4.5 lg:py-4",
                   pcOnly ? "hidden lg:flex" : "flex",
                 )}
               >
-                <span aria-hidden="true" className={clsx("hidden size-2.5 shrink-0 rounded-full lg:block", CATEGORY_STYLES[category].dot)} />
-                <div className="flex flex-col-reverse">
-                  <dt className="text-xs text-ink-soft lg:text-[13px]">{label}</dt>
-                  <dd className={clsx("m-0 text-xl font-extrabold tabular-nums lg:text-[22px]", tone)}>{history.isLoading ? "–" : value}</dd>
-                </div>
+                <dt className="flex items-center gap-2 text-xs text-ink-soft lg:text-[13px] lg:font-semibold">
+                  <span aria-hidden="true" className={clsx("hidden size-2.5 shrink-0 rounded-full lg:block", CATEGORY_STYLES[category].dot)} />
+                  {label}
+                </dt>
+                <dd className={clsx("m-0 text-xl font-extrabold tabular-nums lg:text-[22px]", tone)}>{history.isLoading ? "–" : value}</dd>
               </div>
             ))}
           </dl>

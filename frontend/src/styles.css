@@ -171,7 +171,8 @@ html:not(.dark) .theme-app {
   --field: #f8fafc;
   --ink: #001e33;
   --ink-soft: #334155;
-  --ink-muted: #64748b;
+  /* Artboard grey was #64748b (4.2:1 on the canvas); #566476 keeps the look and passes AA (>=4.8:1 everywhere) */
+  --ink-muted: #566476;
   --placeholder: #94a3b8;
   --line: #e2e8f0;
   --line-strong: #cbd5e1;

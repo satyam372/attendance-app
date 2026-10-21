@@ -7,7 +7,7 @@ import { uuid as randomId } from "./uuid.js";
 // so state survives reloads; bump STORAGE_KEY when the seed shape changes.
 // IDs are UUID strings, like the backend (uuid4).
 
-const STORAGE_KEY = "speedin-mock-db-v3";
+const STORAGE_KEY = "speedin-mock-db-v4";
 
 // Demo-only password for every seeded account (mock mode only, never a real credential).
 export const DEMO_PASSWORD = "speedin123";
@@ -47,6 +47,8 @@ function seed() {
       { id: uuid(108), name: "Dussehra", holiday_date: "2026-10-20", is_optional: false },
       { id: uuid(109), name: "Diwali (Padwa)", holiday_date: "2026-11-09", is_optional: false },
       { id: uuid(110), name: "Bhai Dooj", holiday_date: "2026-11-11", is_optional: false },
+      { id: uuid(112), name: "Dhanteras (optional)", holiday_date: "2026-11-06", is_optional: true },
+      { id: uuid(113), name: "Guru Nanak Jayanti (optional)", holiday_date: "2026-11-24", is_optional: true },
       { id: uuid(111), name: "Christmas", holiday_date: "2026-12-25", is_optional: false },
     ],
     attendance: [],

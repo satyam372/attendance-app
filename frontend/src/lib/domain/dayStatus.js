@@ -42,6 +42,8 @@ export function describeDay(day) {
       return { category: Category.ABSENT, label: "Absent", mode: null };
     case "NOT_CHECKED_IN":
       return { category: Category.TODAY, label: "Not checked in yet", mode: null };
+    case "WEEKEND":
+      return { category: Category.NONE, label: "Weekend", mode: null };
     default:
       return { category: Category.NONE, label: day.status, mode: null };
   }

@@ -30,6 +30,7 @@ describe("describeDay", () => {
     assert.equal(describeDay(day({ status: "REJECTED", in_time: null })).category, Category.ABSENT);
     assert.equal(describeDay(day({ status: "NOT_CHECKED_IN", in_time: null })).category, Category.TODAY);
     assert.equal(describeDay(undefined).category, Category.NONE);
+    assert.equal(describeDay(day({ status: "WEEKEND", in_time: null })).label, "Weekend");
   });
 });
 

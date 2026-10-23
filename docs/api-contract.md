@@ -74,11 +74,13 @@ When `must_change_password` is `true` (accounts created by HR), show the change-
 | Method | Path | Who | Body / query | Response |
 |---|---|---|---|---|
 | GET | `/api/attendance/today` | any | none | `200 TodayStatus` |
-| POST | `/api/attendance/check-in` | any | `{ "work_mode": "OFFICE" \| "WFH" }` (HYBRID is `422`). Server sets `work_date` (Pune) and `in_time` | `201 Attendance`. `409` "You have already checked in today.", "You are on leave today.", "You have used your free WFH days this month. Raise a WFH request instead." (then open the request form; nothing is created automatically) |
+| POST | `/api/attendance/check-in` | any | `{ "work_mode": "OFFICE" \| "WFH", "location": { "latitude", "longitude", "accuracy" } }` (HYBRID is `422`; `location` is required, `422` without it). Server sets `work_date` (Pune) and `in_time` | `201 Attendance`. `409` "You have already checked in today.", "You are on leave today.", "You have used your free WFH days this month. Raise a WFH request instead." (then open the request form; nothing is created automatically), "You are not at the office. Move closer to the office or check in from home.", "Your location is not precise enough. Turn on Wi-Fi or location services and try again." |
 | POST | `/api/attendance/check-out` | any | none | `200 Attendance`. `409` "You have not checked in yet.", "You have already checked out." A check-out after midnight but before 10:30 closes yesterday's open row |
 | GET | `/api/attendance/history?year=2026&month=10` | any | both optional, default this month | `200 AttendanceDay[]`, newest first, up to today. Weekends only when worked; days before the employee joined are left out |
 
 If an approved request (or an HR correction) already set today's work mode, check-in uses that mode whatever is sent.
+
+Location: the frontend sends a fresh browser location (`navigator.geolocation`, `accuracy` in metres) with every check-in. Only a final mode of OFFICE is checked: the location must be at most `OFFICE_MAX_ACCURACY_M` imprecise and within `OFFICE_RADIUS_M` of the office (`distance - accuracy <= radius`). WFH, and an approved WFH day where OFFICE was tapped, are never measured.
 
 Not built yet:
 - `GET /api/attendance?from=YYYY-MM-DD&to=YYYY-MM-DD` (HR weekly sheet)

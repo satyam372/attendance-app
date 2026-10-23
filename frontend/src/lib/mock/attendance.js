@@ -64,10 +64,14 @@ export async function getToday() {
   };
 }
 
-export async function checkIn({ work_mode }) {
+// The mock needs a location like the backend does, but does not check the office distance
+export async function checkIn({ work_mode, location }) {
   await delay(450);
   if (work_mode !== WorkMode.OFFICE && work_mode !== WorkMode.WFH) {
     throw new ApiError(422, "Choose OFFICE or WFH");
+  }
+  if (!location) {
+    throw new ApiError(422, "Field required");
   }
   const db = getDb();
   const employee = currentEmployee();

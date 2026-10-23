@@ -11,6 +11,8 @@ from app.services.attendance import (
     AlreadyCheckedInError,
     AlreadyCheckedOutError,
     AttendanceError,
+    LocationTooImpreciseError,
+    NotAtOfficeError,
     NotCheckedInError,
     OnLeaveError,
     WfhLimitReachedError,
@@ -32,6 +34,10 @@ _ERROR_MESSAGES: dict[type[AttendanceError], str] = {
     OnLeaveError: "You are on leave today.",
     WfhLimitReachedError: "You have used your free WFH days this month. Raise a WFH request instead.",
     NotCheckedInError: "You have not checked in yet.",
+    NotAtOfficeError: "You are not at the office. Move closer to the office or check in from home.",
+    LocationTooImpreciseError: (
+        "Your location is not precise enough. Turn on Wi-Fi or location services and try again."
+    ),
 }
 
 
@@ -52,7 +58,7 @@ def check_in_route(
     payload: CheckInRequest, session: SessionDep, current_user: CurrentUserDep
 ) -> AttendancePublic:
     try:
-        row = check_in(session, current_user, payload.work_mode)
+        row = check_in(session, current_user, payload.work_mode, payload.location)
     except AttendanceError as error:
         raise _conflict(error) from None
     return to_public(session, row)

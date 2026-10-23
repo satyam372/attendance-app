@@ -8,12 +8,14 @@ from sqlmodel import SQLModel
 
 from app.models.attendance import AttendancePublic
 from app.models.enums import DayStatus, Punctuality, WorkMode
+from app.schemas.location import Location
 
 
 class CheckInRequest(SQLModel):
     """Body of POST /api/attendance/check-in. Date and time are set by the server."""
 
     work_mode: WorkMode
+    location: Location
 
     @field_validator("work_mode")
     @classmethod

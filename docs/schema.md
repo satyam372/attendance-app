@@ -129,8 +129,28 @@ What was asked for and the decision. Covers leave and WFH.
 | name | string | required |
 | holiday_date | date | unique |
 | is_optional | bool | default false; optional holidays are taken through a request |
+| is_active | bool | default true; false = removed by HR (soft delete), skipped by every holiday query |
 | created_at | datetime (UTC) | set on insert (database default) |
 | updated_at | datetime (UTC) | set on insert and on every ORM update |
+
+### email_log
+
+One row per email the app tried to send. The body is not stored (it can be rebuilt from the template, and some emails contain a temporary password).
+
+| Field | Type | Rules |
+|---|---|---|
+| id | uuid | primary key, generated in Python (uuid4) |
+| employee_id | uuid → employee.id | nullable (emails not about one employee); indexed |
+| kind | EmailKind | which email |
+| work_date | date | nullable; the Pune day the email is about. Required for CHECK_IN_REMINDER |
+| to_address | string | the address used at the time |
+| subject | string | |
+| status | EmailStatus | SENT, FAILED or SKIPPED (sending disabled) |
+| error | string | nullable; exception message when FAILED |
+| created_at | datetime (UTC) | when it was sent or attempted |
+| updated_at | datetime (UTC) | set on insert and on every ORM update |
+
+Unique on (employee_id, kind, work_date) **except FAILED rows** (partial index `uq_email_log_once`): a cron job that runs twice cannot email someone twice, while a failed send can be retried and every failure stays in the history.
 
 ## Enums
 
@@ -143,6 +163,8 @@ What was asked for and the decision. Covers leave and WFH.
 | RequestType | FULL_LEAVE, HALF_DAY_LEAVE, HALF_LEAVE_HALF_WFH, HALF_WFH, FULL_WFH |
 | LeaveCategory | CASUAL, SICK, EARNED, OPTIONAL_HOLIDAY |
 | ApprovalStatus | PENDING, APPROVED, REJECTED |
+| EmailKind | CHECK_IN_REMINDER |
+| EmailStatus | SENT, FAILED, SKIPPED |
 
 ## How a request maps to attendance
 

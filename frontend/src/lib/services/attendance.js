@@ -10,9 +10,9 @@ export function getToday() {
 }
 
 /** POST /attendance/check-in with work_mode OFFICE or WFH → AttendancePublic. 409 with a message when not allowed. */
-export function checkIn(workMode) {
-  if (USE_MOCK_API) return mock.checkIn({ work_mode: workMode });
-  return apiFetch("/attendance/check-in", { method: "POST", body: { work_mode: workMode } });
+export function checkIn(workMode, location) {
+  if (USE_MOCK_API) return mock.checkIn({ work_mode: workMode, location });
+  return apiFetch("/attendance/check-in", { method: "POST", body: { work_mode: workMode, location } });
 }
 
 /** POST /attendance/check-out → AttendancePublic. */

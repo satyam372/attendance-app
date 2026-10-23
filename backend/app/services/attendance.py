@@ -10,6 +10,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
 
 from app.core.config import get_settings
+from app.core.geo import distance_m
 from app.core.time import is_late, is_weekend, punctuality, to_office_time
 from app.models.attendance import Attendance, AttendancePublic
 from app.models.enums import ApprovalStatus, DayStatus, LeavePortion, WorkMode
@@ -17,6 +18,7 @@ from app.models.holiday import Holiday
 from app.models.request import Request
 from app.models.user import Employee
 from app.schemas.attendance import AttendanceDay, TodayStatus
+from app.schemas.location import Location
 from app.services.holiday import holiday_dates_between, holidays_between, is_working_day
 
 
@@ -42,6 +44,14 @@ class NotCheckedInError(AttendanceError):
 
 class AlreadyCheckedOutError(AttendanceError):
     """There is already an out_time for this check-in."""
+
+
+class LocationTooImpreciseError(AttendanceError):
+    """OFFICE check-in with a location less precise than OFFICE_MAX_ACCURACY_M."""
+
+
+class NotAtOfficeError(AttendanceError):
+    """OFFICE check-in from farther than OFFICE_RADIUS_M from the office."""
 
 
 def _now(now: datetime | None) -> datetime:
@@ -89,8 +99,13 @@ def count_wfh_used(session: Session, employee_id: uuid.UUID, year: int, month: i
 
 
 def check_in(
-    session: Session, employee: Employee, work_mode: WorkMode, now: datetime | None = None
+    session: Session,
+    employee: Employee,
+    work_mode: WorkMode,
+    location: Location,
+    now: datetime | None = None,
 ) -> Attendance:
+    settings = get_settings()
     now = _now(now)
     today = to_office_time(now).date()  # Pune date, not the server's UTC date
     row = get_day_row(session, employee.id, today)
@@ -109,8 +124,20 @@ def check_in(
         work_mode = row.work_mode
     elif work_mode == WorkMode.WFH and is_working_day(session, today):
         used = count_wfh_used(session, employee.id, today.year, today.month)
-        if used >= get_settings().wfh_free_days_per_month:
+        if used >= settings.wfh_free_days_per_month:
             raise WfhLimitReachedError
+
+    # Checked on the final mode, so an approved WFH day is never measured against the office
+    if work_mode == WorkMode.OFFICE:
+        # A vague location cannot prove anything, so check it before measuring the distance
+        if location.accuracy > settings.office_max_accuracy_m:
+            raise LocationTooImpreciseError
+        distance = distance_m(
+            location.latitude, location.longitude, settings.office_lat, settings.office_lng
+        )
+        # Give the benefit of the doubt within the device's own accuracy
+        if distance - location.accuracy > settings.office_radius_m:
+            raise NotAtOfficeError
 
     if row is None:
         row = Attendance(employee_id=employee.id, work_date=today)

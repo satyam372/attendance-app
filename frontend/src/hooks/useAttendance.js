@@ -1,6 +1,7 @@
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { monthOf } from "../lib/domain/time.js";
+import { getCurrentLocation } from "../lib/geolocation.js";
 import * as attendance from "../lib/services/attendance.js";
 
 export const attendanceKeys = {
@@ -46,8 +47,12 @@ function useAttendanceAction(mutationFn) {
   });
 }
 
+/** Gets a fresh location (the browser may ask for permission), then checks in. */
 export function useCheckIn() {
-  return useAttendanceAction((workMode) => attendance.checkIn(workMode));
+  return useAttendanceAction(async (workMode) => {
+    const location = await getCurrentLocation();
+    return attendance.checkIn(workMode, location);
+  });
 }
 
 export function useCheckOut() {

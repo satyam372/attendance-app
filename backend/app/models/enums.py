@@ -46,6 +46,17 @@ class ApprovalStatus(StrEnum):
     REJECTED = "REJECTED"
 
 
+class EmailKind(StrEnum):
+    # Add a value here (plus a migration) for each new email the app sends
+    CHECK_IN_REMINDER = "CHECK_IN_REMINDER"
+
+
+class EmailStatus(StrEnum):
+    SENT = "SENT"
+    FAILED = "FAILED"
+    SKIPPED = "SKIPPED"  # sending disabled (MAIL_USERNAME empty), e.g. local dev
+
+
 # API-only enums (not stored): used by the attendance history table
 
 

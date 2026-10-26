@@ -47,11 +47,14 @@ function useAttendanceAction(mutationFn) {
   });
 }
 
-/** Gets a fresh location (the browser may ask for permission), then checks in. */
+/**
+ * Checks in with `location` if given, otherwise gets a fresh one (the browser may ask for permission).
+ * Call as `mutate({ workMode, location })`: TanStack Query passes only one variable to the mutation.
+ */
 export function useCheckIn() {
-  return useAttendanceAction(async (workMode) => {
-    const location = await getCurrentLocation();
-    return attendance.checkIn(workMode, location);
+  return useAttendanceAction(async ({ workMode, location }) => {
+    const loc = location ?? (await getCurrentLocation());
+    return attendance.checkIn(workMode, loc);
   });
 }
 

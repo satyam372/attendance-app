@@ -1,10 +1,11 @@
 import clsx from "clsx";
 import { Building2, House, Power } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { useCheckIn, useCheckOut } from "../../hooks/useAttendance.js";
 import { LeavePortion, WorkMode } from "../../lib/domain/enums.js";
 import { formatClock, formatDuration, formatLongDate, formatTime, minutesBetween } from "../../lib/domain/time.js";
+import { LOCATION2_ENABLED, LOCATION2_HOLD_MS, location2 } from "../../lib/geolocation.js";
 import { ErrorAlert } from "../ui/Alert.jsx";
 import { Button } from "../ui/Button.jsx";
 import { Skeleton } from "../ui/Skeleton.jsx";
@@ -28,6 +29,12 @@ export function CheckInCard({ today, isLoading, isError, onRetry, now }) {
   const checkIn = useCheckIn();
   const checkOut = useCheckOut();
   const clock = formatClock(now);
+  // On/off flag for location2. A ref, not state: it is set and read within the same press.
+  const location2On = useRef(false);
+  const holdTimer = useRef(null);
+  const holdStart = useRef(0);
+
+  useEffect(() => () => clearTimeout(holdTimer.current), []);
 
   if (isLoading) {
     return (
@@ -84,10 +91,35 @@ export function CheckInCard({ today, isLoading, isError, onRetry, now }) {
   else if (!today.is_working_day) status = "Not a working day. Checking in is optional, and WFH won't count toward your limit.";
   else status = "You haven't checked in yet.";
 
+  // Holding the button for LOCATION2_HOLD_MS turns the flag on (dev builds only)
+  function startHold() {
+    location2On.current = false;
+    if (!LOCATION2_ENABLED || phase !== "in") return;
+    holdStart.current = Date.now();
+    console.log("[hold] start");
+    clearTimeout(holdTimer.current);
+    holdTimer.current = setTimeout(() => {
+      location2On.current = true;
+      console.log(`[hold] ${LOCATION2_HOLD_MS} ms reached, location2 ON`);
+    }, LOCATION2_HOLD_MS);
+  }
+
+  function cancelHold() {
+    clearTimeout(holdTimer.current);
+  }
+
   function handlePress() {
+    cancelHold();
+    // LOCATION2_ENABLED first so production builds drop location2 entirely
+    const location = LOCATION2_ENABLED && location2On.current ? location2 : undefined;
+    if (LOCATION2_ENABLED && holdStart.current) {
+      console.log(`[hold] released after ${Date.now() - holdStart.current} ms, location2 ${location ? "ON" : "OFF"}`);
+      holdStart.current = 0;
+    }
+    location2On.current = false;
     checkIn.reset();
     checkOut.reset();
-    if (phase === "in") checkIn.mutate(chosenMode);
+    if (phase === "in") checkIn.mutate({ workMode: chosenMode, location });
     else if (phase === "out") checkOut.mutate();
   }
 
@@ -140,11 +172,15 @@ export function CheckInCard({ today, isLoading, isError, onRetry, now }) {
       <button
         type="button"
         onClick={handlePress}
+        onPointerDown={startHold}
+        onPointerLeave={cancelHold}
+        onPointerCancel={cancelHold}
+        onContextMenu={(e) => e.preventDefault()}
         disabled={phase === "done" || phase === "leave" || wfhBlocked || pending}
         aria-label={button.aria}
         aria-busy={pending || undefined}
         className={clsx(
-          "flex size-42 cursor-pointer flex-col items-center justify-center gap-2 rounded-full border-[10px] transition duration-200 lg:size-40",
+          "flex size-42 cursor-pointer flex-col select-none items-center justify-center gap-2 rounded-full border-[10px] transition duration-200 lg:size-40",
           "disabled:cursor-default disabled:hover:brightness-100",
           (wfhBlocked || pending) && "opacity-60",
           button.classes,

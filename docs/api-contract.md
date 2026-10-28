@@ -67,7 +67,7 @@ API-only enums (not stored in the database):
 | GET | `/api/auth/me` | any | none | `200 Employee`, or `401` when not signed in |
 | POST | `/api/auth/change-password` | any (own password only) | `{ "current_password", "new_password" }`. New password: 8+ characters, at most 72 bytes | `200 Employee` with `must_change_password: false`; the user stays signed in. `400` "Current password is incorrect", `400` "Choose a password different from the current one", `422` policy |
 
-When `must_change_password` is `true` (accounts created by HR), show the change-password screen before anything else. "Confirm new password" is checked in the form only.
+When `must_change_password` is `true` (accounts created by HR), show the change-password screen before anything else. "Confirm new password" is checked in the form only. The frontend does this at `/change-password` (every signed-in route redirects there until the change succeeds); anyone can also change their password from Profile.
 
 ## Attendance
 

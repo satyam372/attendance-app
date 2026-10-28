@@ -1,6 +1,7 @@
 import clsx from "clsx";
 import { Building2, House, Power } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 
 import { useCheckIn, useCheckOut } from "../../hooks/useAttendance.js";
 import { LeavePortion, WorkMode } from "../../lib/domain/enums.js";
@@ -70,6 +71,8 @@ export function CheckInCard({ today, isLoading, isError, onRetry, now }) {
   const wfhBlocked = phase === "in" && !presetMode && chosenMode === WorkMode.WFH && wfhAtLimit;
   const pending = checkIn.isPending || checkOut.isPending;
   const error = checkIn.error ?? checkOut.error;
+  // The backend refused an office check-in because of the distance: offer home instead
+  const notAtOffice = phase === "in" && !presetMode && chosenMode === WorkMode.OFFICE && checkIn.error?.status === 409 && /not at the office/i.test(checkIn.error.message);
 
   const button = {
     in: {
@@ -90,6 +93,7 @@ export function CheckInCard({ today, isLoading, isError, onRetry, now }) {
   else if (presetMode) status = `Approved for today: working ${MODE_TEXT[presetMode]}.`;
   else if (!today.is_working_day) status = "Not a working day. Checking in is optional, and WFH won't count toward your limit.";
   else status = "You haven't checked in yet.";
+  if (checkIn.locating) status = "Getting your location… Allow location access if your browser asks.";
 
   // Holding the button for LOCATION2_HOLD_MS turns the flag on (dev builds only)
   function startHold() {
@@ -187,7 +191,7 @@ export function CheckInCard({ today, isLoading, isError, onRetry, now }) {
         )}
       >
         <Power className={clsx("size-8.5", pending && "animate-pulse")} strokeWidth={2} aria-hidden="true" />
-        <span className="text-[17px] font-bold">{pending ? "Saving…" : button.label}</span>
+        <span className="text-[17px] font-bold">{checkIn.locating ? "Locating…" : pending ? "Saving…" : button.label}</span>
       </button>
 
       <div aria-live="polite" className="flex flex-col items-center gap-2 text-center">
@@ -198,6 +202,24 @@ export function CheckInCard({ today, isLoading, isError, onRetry, now }) {
           )}
         </p>
         <ErrorAlert className="text-left">{error?.message}</ErrorAlert>
+        {notAtOffice &&
+          (wfhAtLimit ? (
+            <Link to="/leave" className="text-sm font-semibold text-accent-ink">
+              Raise a WFH request instead
+            </Link>
+          ) : (
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setMode(WorkMode.WFH);
+                checkIn.reset();
+                checkIn.mutate({ workMode: WorkMode.WFH });
+              }}
+            >
+              <House className="size-4" aria-hidden="true" />
+              Check in from home instead
+            </Button>
+          ))}
       </div>
 
       <TodayTimes attendance={att} now={now} variant="inline" className="hidden lg:grid" />

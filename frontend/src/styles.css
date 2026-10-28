@@ -113,7 +113,7 @@
 
   --accent-soft: rgb(124 98 230 / 0.22);
   --on-accent: #ffffff;
-  --checkout: #ea580c;
+  --checkout: #c2410c; /* white text needs 4.5:1; #ea580c was 3.6:1 */
   --checkout-soft: rgb(251 146 60 / 0.16);
   --late: #fdba74;
   --late-soft: rgb(251 146 60 / 0.14);

@@ -135,7 +135,7 @@ Not built yet:
 | Method | Path | Who | Query | Response |
 |---|---|---|---|---|
 | GET | `/api/dashboard/today` | HR | `day=YYYY-MM-DD` optional, default today in Pune; future dates are `422` | `200 DaySummary` |
-| GET | `/api/dashboard/today/team` | HR | same | `200 TeamMemberDay[]`, one per active employee who had joined by `day`, sorted by name |
+| GET | `/api/dashboard/today/team` | HR | same | `200 TeamMemberDay[]`, one per active employee who had joined by `day`, sorted by name. The HR attendance sheet (`/hr/sheet`) calls it once per weekday, up to today |
 
 - A future `day` is `422` "day cannot be in the future".
 - Every employee is in exactly one bucket, so `in_office + wfh + hybrid + on_leave + half_day_leave + not_checked_in == team_size`; `late` is a subset of the checked-in people.

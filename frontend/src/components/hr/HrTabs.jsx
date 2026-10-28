@@ -1,21 +1,44 @@
 import clsx from "clsx";
-import { NavLink } from "react-router-dom";
+import { useEffect, useRef } from "react";
+import { NavLink, useLocation } from "react-router-dom";
 
 import { useRequestList } from "../../hooks/useRequests.js";
 
-/** Tabs across the HR pages. The bottom tab bar's "Team" tab covers all of them on phones. */
+/**
+ * Tabs across the HR pages. The bottom tab bar's "Team" tab covers all of them on phones,
+ * where this bar scrolls sideways and keeps the current tab in view.
+ */
 export function HrTabs() {
   const pending = useRequestList(["PENDING"]);
   const count = pending.data?.length ?? 0;
+  const navRef = useRef(null);
+  const { pathname } = useLocation();
   const tabs = [
     { to: "/hr", label: "Team today", short: "Today", end: true },
+    { to: "/hr/sheet", label: "Sheet" },
     { to: "/hr/approvals", label: "Approvals", badge: count },
     { to: "/hr/team", label: "People" },
     { to: "/hr/holidays", label: "Holidays" },
   ];
 
+  // Scroll only the bar (not the page) so the current tab is fully visible. Runs again when the
+  // Approvals badge appears, because it widens the tabs before it.
+  useEffect(() => {
+    const nav = navRef.current;
+    const active = nav?.querySelector("[aria-current=page]");
+    if (!active) return;
+    const tab = active.getBoundingClientRect();
+    const bar = nav.getBoundingClientRect();
+    if (tab.right > bar.right) nav.scrollLeft += tab.right - bar.right + 4;
+    else if (tab.left < bar.left) nav.scrollLeft -= bar.left - tab.left + 4;
+  }, [pathname, count]);
+
   return (
-    <nav aria-label="HR" className="-mb-1 grid grid-cols-4 gap-1 rounded-2xl bg-surface p-1 ring-1 ring-line sm:flex sm:self-start">
+    <nav
+      ref={navRef}
+      aria-label="HR"
+      className="-mb-1 flex gap-1 self-start overflow-x-auto rounded-2xl bg-surface p-1 ring-1 ring-line [scrollbar-width:none] max-sm:max-w-full"
+    >
       {tabs.map(({ to, label, short, end, badge }) => (
         <NavLink
           key={to}
@@ -23,7 +46,7 @@ export function HrTabs() {
           end={end}
           className={({ isActive }) =>
             clsx(
-              "flex min-h-10 min-w-0 items-center justify-center gap-1.5 rounded-xl px-1 text-[13px] font-semibold whitespace-nowrap transition sm:px-4 sm:text-sm",
+              "flex min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl px-3 text-[13px] font-semibold whitespace-nowrap transition sm:px-4 sm:text-sm",
               isActive ? "bg-accent-soft text-accent-ink" : "text-ink-muted hover:text-ink",
             )
           }

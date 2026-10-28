@@ -77,7 +77,7 @@ attendance-app/
         │                          # attendance/ (MonthCalendar, DayDetail, DailyLog), leave/ (LeaveForm, UpcomingHolidays),
         │                          # hr/ (HrTabs, TeamMemberCard, RequestCard, AddEmployeeForm),
         │                          # ui/ (Button, TextField, Fields: SelectField, DateField, TextAreaField, Segmented, ...)
-        └── pages/                 # Login, EmployeeHome, Attendance, Leave, Profile, HrToday (/hr), HrApprovals (/hr/approvals), HrTeam (/hr/team), HrHolidays (/hr/holidays), NotFound
+        └── pages/                 # Login, EmployeeHome, Attendance, Leave, Profile, HrToday (/hr), HrSheet (/hr/sheet), HrApprovals (/hr/approvals), HrTeam (/hr/team), HrHolidays (/hr/holidays), NotFound
 ```
 
 Frontend commands (in `frontend/`): `npm run dev` (port 1234), `npm run build`, `npm test` (domain rules). Server data goes through React Query hooks in `src/hooks/`; navigation is a sidebar on PC (lg+) and a bottom tab bar on phones. Styling is **Tailwind only**: use the tokens in `styles.css` (`bg-surface`, `text-ink`, `text-accent-ink`, ...), not raw hex values.

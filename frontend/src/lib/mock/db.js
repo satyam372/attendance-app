@@ -72,7 +72,7 @@ function seedAttendance(db) {
   const [y, m] = today.split("-").map(Number);
   const firstOfLastMonth = new Date(Date.UTC(y, m - 2, 1)).toISOString().slice(0, 10);
   const thisMonth = today.slice(0, 7);
-  const closed = new Set(db.holidays.filter((h) => !h.is_optional).map((h) => h.holiday_date));
+  const closed = new Set(activeHolidays(db).filter((h) => !h.is_optional).map((h) => h.holiday_date));
   const rows = [];
 
   db.employees.forEach((employee, e) => {
@@ -110,7 +110,7 @@ function seedAttendance(db) {
 /** A few requests for the HR Approvals screen, relative to today: two pending, two decided. */
 function seedRequests(db) {
   const today = toDateKey();
-  const closed = new Set(db.holidays.filter((h) => !h.is_optional).map((h) => h.holiday_date));
+  const closed = new Set(activeHolidays(db).filter((h) => !h.is_optional).map((h) => h.holiday_date));
   const workingAfter = (day, n) => {
     let d = day;
     for (let found = 0; found < n; ) {
@@ -168,6 +168,11 @@ export function resetDb() {
 /** Simulated network latency so loading states are visible in mock mode. */
 export function delay(ms = 350) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** Holidays HR has not removed (soft delete with is_active, like the backend). Seeded ones have no flag. */
+export function activeHolidays(db) {
+  return db.holidays.filter((h) => h.is_active !== false);
 }
 
 /** Strips server-only fields, like the API would. */

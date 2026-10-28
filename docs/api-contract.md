@@ -67,7 +67,7 @@ API-only enums (not stored in the database):
 | GET | `/api/auth/me` | any | none | `200 Employee`, or `401` when not signed in |
 | POST | `/api/auth/change-password` | any (own password only) | `{ "current_password", "new_password" }`. New password: 8+ characters, at most 72 bytes | `200 Employee` with `must_change_password: false`; the user stays signed in. `400` "Current password is incorrect", `400` "Choose a password different from the current one", `422` policy |
 
-When `must_change_password` is `true` (accounts created by HR), show the change-password screen before anything else. "Confirm new password" is checked in the form only.
+When `must_change_password` is `true` (accounts created by HR), show the change-password screen before anything else. "Confirm new password" is checked in the form only. The frontend does this at `/change-password` (every signed-in route redirects there until the change succeeds); anyone can also change their password from Profile.
 
 ## Attendance
 
@@ -109,7 +109,7 @@ Only HR decides for now (`decided_by_id` is always HR). Pending and rejected req
 |---|---|---|---|---|
 | GET | `/api/holidays` | any | none | `200 Holiday[]`, active holidays only, sorted by date (no year filter yet) |
 | POST | `/api/holidays` | HR | `{ "name", "holiday_date", "is_optional" }` (`is_optional` defaults to false) | `201 Holiday`. `409` "A holiday already exists on this date" (an active one). Adding a date whose holiday was removed restores that row with the new name and `is_optional` |
-| PATCH | `/api/holidays/{id}` | HR | `{ "is_active": false }` removes, `{ "is_active": true }` restores (required) | `200 Holiday`. `404` "Holiday not found" |
+| PATCH | `/api/holidays/{id}` | HR | `{ "is_active": false }` removes, `{ "is_active": true }` restores (required) | `200 Holiday`. `404` "Holiday not found". The HR Holidays page removes upcoming holidays (with Undo); past ones stay read-only |
 
 Optional holidays are working days; an employee takes one with a FULL_LEAVE request, `leave_category: "OPTIONAL_HOLIDAY"` and its `holiday_id`.
 

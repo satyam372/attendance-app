@@ -1,6 +1,6 @@
 import clsx from "clsx";
-import { CircleCheck } from "lucide-react";
-import { useEffect, useState } from "react";
+import { CircleCheck, Trash2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 import { HrTabs } from "../components/hr/HrTabs.jsx";
 import { ErrorAlert } from "../components/ui/Alert.jsx";
@@ -8,15 +8,22 @@ import { Button } from "../components/ui/Button.jsx";
 import { DateField } from "../components/ui/Fields.jsx";
 import { Skeleton } from "../components/ui/Skeleton.jsx";
 import { TextField } from "../components/ui/TextField.jsx";
-import { useCreateHoliday } from "../hooks/useEmployees.js";
+import { useCreateHoliday, useSetHolidayActive } from "../hooks/useEmployees.js";
 import { useHolidays } from "../hooks/useRequests.js";
 import { isWeekend, shortWeekday, toDateKey } from "../lib/domain/time.js";
 
-function HolidayRow({ holiday, past }) {
+function HolidayRow({ holiday, past, confirming, removing, onAskRemove, onConfirmRemove, onCancelRemove }) {
   const [y, m, d] = holiday.holiday_date.split("-").map(Number);
   const month = new Date(Date.UTC(y, m - 1, d)).toLocaleDateString("en-IN", { month: "short", timeZone: "UTC" });
+  const cancelRef = useRef(null);
+
+  // Move focus into the confirm step so keyboard users land on it (Cancel is the safe default)
+  useEffect(() => {
+    if (confirming) cancelRef.current?.focus();
+  }, [confirming]);
+
   return (
-    <li className="flex items-center gap-3.5 border-b border-line/70 py-3 last:border-b-0">
+    <li className="flex flex-wrap items-center gap-x-3.5 gap-y-3 border-b border-line/70 py-3 last:border-b-0">
       <span className={clsx("flex w-12 shrink-0 flex-col items-center rounded-xl py-1.5", past ? "bg-field text-ink-muted" : "bg-accent-soft text-accent-ink")}>
         <span className="text-lg leading-none font-extrabold tabular-nums">{d}</span>
         <span className="text-[11px] font-semibold">{month}</span>
@@ -29,11 +36,36 @@ function HolidayRow({ holiday, past }) {
         </span>
       </span>
       {holiday.is_optional && <span className="shrink-0 rounded-full bg-leave-soft px-2.5 py-1 text-xs font-bold text-leave-ink">Optional</span>}
+      {onAskRemove && !confirming && (
+        <Button variant="ghost" size="icon" aria-label={`Remove ${holiday.name}`} onClick={() => onAskRemove(holiday)} className="-mr-2 shrink-0">
+          <Trash2 className="size-4.5" aria-hidden="true" />
+        </Button>
+      )}
+      {confirming && (
+        <div role="group" aria-label={`Remove ${holiday.name}?`} className="flex w-full flex-wrap items-center gap-x-3 gap-y-2 rounded-xl bg-field px-3.5 py-2.5">
+          <p className="m-0 min-w-0 flex-1 basis-48 text-sm text-ink-soft">
+            Remove <strong className="text-ink">{holiday.name}</strong>?{" "}
+            {holiday.is_optional ? "Employees can no longer request it." : "It becomes a working day again."}
+          </p>
+          <div className="flex gap-2">
+            <Button ref={cancelRef} variant="ghost" onClick={onCancelRemove} disabled={removing}>
+              Cancel
+            </Button>
+            <Button variant="danger" loading={removing} onClick={() => onConfirmRemove(holiday)}>
+              {removing ? "Removing" : "Remove"}
+            </Button>
+          </div>
+        </div>
+      )}
     </li>
   );
 }
 
-/** HR company holidays: upcoming and past (GET /api/holidays) and adding one (POST /api/holidays). */
+/**
+ * HR company holidays: upcoming and past (GET /api/holidays), adding one (POST /api/holidays) and
+ * removing an upcoming one with Undo (PATCH /api/holidays/{id}). Past holidays stay read-only:
+ * removing one would turn those days into absences after the fact.
+ */
 export default function HrHolidays() {
   const holidays = useHolidays();
   const createHoliday = useCreateHoliday();
@@ -41,6 +73,10 @@ export default function HrHolidays() {
   const [form, setForm] = useState({ name: "", holiday_date: "", is_optional: false });
   const [errors, setErrors] = useState({});
   const [added, setAdded] = useState(null);
+  const setActive = useSetHolidayActive();
+  const [confirmingId, setConfirmingId] = useState(null);
+  const [removed, setRemoved] = useState(null); // last removed holiday, for Undo
+  const undoRef = useRef(null);
 
   useEffect(() => {
     document.title = "Holidays · SpeedIn";
@@ -57,6 +93,33 @@ export default function HrHolidays() {
     createHoliday.reset();
   };
 
+  function askRemove(holiday) {
+    setActive.reset();
+    setRemoved(null);
+    setConfirmingId(holiday.id);
+  }
+
+  function confirmRemove(holiday) {
+    setActive.mutate(
+      { id: holiday.id, isActive: false },
+      {
+        onSuccess: () => {
+          setConfirmingId(null);
+          setRemoved(holiday);
+        },
+      },
+    );
+  }
+
+  function undoRemove() {
+    setActive.mutate({ id: removed.id, isActive: true }, { onSuccess: () => setRemoved(null) });
+  }
+
+  // The removed row disappears, so focus goes to Undo instead of being lost
+  useEffect(() => {
+    if (removed) undoRef.current?.focus();
+  }, [removed]);
+
   function handleSubmit(event) {
     event.preventDefault();
     const found = {};
@@ -69,6 +132,7 @@ export default function HrHolidays() {
       {
         onSuccess: (holiday) => {
           setAdded(holiday);
+          setRemoved(null); // adding on a removed date restores it, so Undo no longer applies
           setForm({ name: "", holiday_date: "", is_optional: false });
         },
       },
@@ -97,12 +161,31 @@ export default function HrHolidays() {
                 <h2 id="upcoming-heading" className="m-0 mb-1 text-base font-bold">
                   Upcoming ({upcoming.length})
                 </h2>
+                <ErrorAlert className="my-2">{setActive.error?.message}</ErrorAlert>
+                {removed && (
+                  <div role="status" className="my-2 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-field py-1.5 pr-1.5 pl-3.5 text-sm">
+                    <span className="min-w-0">
+                      Removed <strong>{removed.name}</strong>.
+                    </span>
+                    <Button ref={undoRef} variant="secondary" loading={setActive.isPending} onClick={undoRemove}>
+                      Undo
+                    </Button>
+                  </div>
+                )}
                 {upcoming.length === 0 ? (
                   <p className="m-0 py-6 text-sm text-ink-muted">No upcoming holidays. Add the next one.</p>
                 ) : (
                   <ul className="m-0 list-none p-0">
                     {upcoming.map((h) => (
-                      <HolidayRow key={h.id} holiday={h} />
+                      <HolidayRow
+                        key={h.id}
+                        holiday={h}
+                        confirming={confirmingId === h.id}
+                        removing={confirmingId === h.id && setActive.isPending}
+                        onAskRemove={askRemove}
+                        onConfirmRemove={confirmRemove}
+                        onCancelRemove={() => setConfirmingId(null)}
+                      />
                     ))}
                   </ul>
                 )}
@@ -153,7 +236,7 @@ export default function HrHolidays() {
               {createHoliday.isPending ? "Adding" : "Add holiday"}
             </Button>
           </form>
-          <p className="m-0 text-xs text-ink-muted">Removing or editing a holiday isn&rsquo;t available yet.</p>
+          <p className="m-0 text-xs text-ink-muted">To change a holiday, remove it and add it again. Adding one on a removed date restores it.</p>
         </section>
       </div>
     </div>

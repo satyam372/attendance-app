@@ -18,15 +18,27 @@ export function useCreateEmployee() {
   });
 }
 
-/** Add a holiday; holidays, attendance and the HR dashboard refresh (working days change). */
+// Holidays change which days are working days, so attendance and the HR dashboard refresh too.
+function refreshAfterHolidayChange(queryClient) {
+  queryClient.invalidateQueries({ queryKey: ["holidays"] });
+  queryClient.invalidateQueries({ queryKey: ["attendance"] });
+  queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+}
+
+/** Add a holiday (or restore a removed one on that date). */
 export function useCreateHoliday() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: employees.createHoliday,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["holidays"] });
-      queryClient.invalidateQueries({ queryKey: ["attendance"] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-    },
+    onSuccess: () => refreshAfterHolidayChange(queryClient),
+  });
+}
+
+/** Remove ({ id, isActive: false }) or restore ({ id, isActive: true }) a holiday. */
+export function useSetHolidayActive() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, isActive }) => employees.setHolidayActive(id, isActive),
+    onSuccess: () => refreshAfterHolidayChange(queryClient),
   });
 }

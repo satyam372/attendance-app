@@ -4,7 +4,7 @@ import { LeavePortion, WorkMode } from "../domain/enums.js";
 import { Punctuality, punctuality } from "../domain/rules.js";
 import { addDays, isWeekend, minutesBetween, minutesInOfficeTz, monthOf, parseHm, toDateKey } from "../domain/time.js";
 import { currentEmployee } from "./auth.js";
-import { delay, getDb, saveDb } from "./db.js";
+import { activeHolidays, delay, getDb, saveDb } from "./db.js";
 import { openRequestStatusByDay } from "./requests.js";
 import { uuid } from "./uuid.js";
 
@@ -21,7 +21,7 @@ const MESSAGES = {
 };
 
 function closedHolidays(db) {
-  return new Map(db.holidays.filter((h) => !h.is_optional).map((h) => [h.holiday_date, h]));
+  return new Map(activeHolidays(db).filter((h) => !h.is_optional).map((h) => [h.holiday_date, h]));
 }
 
 function isWorkingDay(db, day) {
@@ -148,7 +148,7 @@ export async function getHistory({ year, month } = {}) {
   const last = end < today ? end : today;
   if (first > last) return [];
 
-  const holidays = new Map(db.holidays.map((h) => [h.holiday_date, h]));
+  const holidays = new Map(activeHolidays(db).map((h) => [h.holiday_date, h]));
   const requestStatus = openRequestStatusByDay(employee.id, first, last);
   const days = [];
   for (let day = last; day >= first; day = addDays(day, -1)) {

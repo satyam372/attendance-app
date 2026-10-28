@@ -1,9 +1,10 @@
 import { Route, Routes } from "react-router-dom";
 
 import { AppLayout } from "./components/AppLayout.jsx";
-import { ProtectedRoute, PublicOnlyRoute } from "./components/ProtectedRoute.jsx";
+import { CHANGE_PASSWORD_PATH, ProtectedRoute, PublicOnlyRoute } from "./components/ProtectedRoute.jsx";
 import { Role } from "./lib/domain/enums.js";
 import Attendance from "./pages/Attendance.jsx";
+import ChangePassword from "./pages/ChangePassword.jsx";
 import EmployeeHome from "./pages/EmployeeHome.jsx";
 import HrApprovals from "./pages/HrApprovals.jsx";
 import HrHolidays from "./pages/HrHolidays.jsx";
@@ -23,6 +24,8 @@ export default function App() {
       </Route>
 
       <Route element={<ProtectedRoute />}>
+        {/* First sign-in with a temporary password: full screen, outside the app navigation */}
+        <Route path={CHANGE_PASSWORD_PATH} element={<ChangePassword />} />
         <Route element={<AppLayout />}>
           <Route index element={<EmployeeHome />} />
           <Route path="/attendance" element={<Attendance />} />

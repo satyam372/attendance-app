@@ -74,7 +74,7 @@ attendance-app/
         ├── hooks/                 # useAttendance (React Query), useNow (live clock)
         ├── components/            # AppLayout, ProtectedRoute, ChangePasswordForm, LoginIllustration, layout/ (Sidebar, BottomNav),
         │                          # home/ (CheckInCard, TodayTimes, HoursChart, MonthStats),
-        │                          # attendance/ (MonthCalendar, DayDetail, DailyLog), leave/ (LeaveForm, UpcomingHolidays),
+        │                          # attendance/ (MonthCalendar, DayDetail, DailyLog), leave/ (LeaveForm, MyRequests, UpcomingHolidays),
         │                          # hr/ (HrTabs, TeamMemberCard, RequestCard, AddEmployeeForm),
         │                          # ui/ (Button, TextField, Fields: SelectField, DateField, TextAreaField, Segmented, ...)
         └── pages/                 # Login, ChangePassword (/change-password, forced while must_change_password), EmployeeHome, Attendance, Leave, Profile, HrToday (/hr), HrApprovals (/hr/approvals), HrTeam (/hr/team), HrHolidays (/hr/holidays), NotFound

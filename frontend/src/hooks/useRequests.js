@@ -7,13 +7,21 @@ export function useHolidays() {
   return useQuery({ queryKey: ["holidays"], queryFn: requests.getHolidays, staleTime: 10 * 60_000 });
 }
 
-/** Raise a request; refresh attendance so pending days show as "Awaiting approval". */
+/** Raise a request; refresh attendance (pending days show as "Awaiting approval") and request lists. */
 export function useCreateRequest() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: requests.createRequest,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["attendance"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["attendance"] });
+      queryClient.invalidateQueries({ queryKey: ["requests"] });
+    },
   });
+}
+
+/** The signed-in employee's own requests (Leave screen). Refreshes after HR decides. */
+export function useMyRequests() {
+  return useQuery({ queryKey: ["requests", "me"], queryFn: requests.getMyRequests, refetchInterval: 60_000 });
 }
 
 /** HR request lists. statuses: e.g. ["PENDING"] or ["APPROVED", "REJECTED"]. */

@@ -14,13 +14,11 @@ function requireHr() {
   if (user.role !== Role.HR) throw new ApiError(403, "You do not have permission to do this");
 }
 
-/** GET /employees → EmployeeBase[] (no id, no password), sorted by name. */
+/** GET /employees → EmployeePublic[] (with id, no password), sorted by name. */
 export async function listEmployees() {
   await delay(300);
   requireHr();
-  return [...getDb().employees]
-    .sort((a, b) => a.name.localeCompare(b.name))
-    .map(({ name, email, role, reports_to_id, is_active }) => ({ name, email, role, reports_to_id, is_active }));
+  return [...getDb().employees].sort((a, b) => a.name.localeCompare(b.name)).map(publicEmployee);
 }
 
 /** POST /employees with EmployeeCreate → 201 EmployeePublic (must_change_password true). */

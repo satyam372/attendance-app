@@ -103,6 +103,16 @@ def list_requests(
     ]
 
 
+def list_my_requests(session: Session, employee: Employee) -> list[Request]:
+    """The employee's own requests, every status, newest first."""
+    query = (
+        select(Request)
+        .where(Request.employee_id == employee.id)
+        .order_by(Request.created_at.desc())
+    )
+    return list(session.exec(query).all())
+
+
 def _attendance_values(request: Request) -> dict:
     """What an approved request writes into each day's attendance row."""
     match request.request_type:

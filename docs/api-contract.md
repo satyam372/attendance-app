@@ -109,7 +109,7 @@ Only HR decides for now (`decided_by_id` is always HR). Pending and rejected req
 |---|---|---|---|---|
 | GET | `/api/holidays` | any | none | `200 Holiday[]`, active holidays only, sorted by date (no year filter yet) |
 | POST | `/api/holidays` | HR | `{ "name", "holiday_date", "is_optional" }` (`is_optional` defaults to false) | `201 Holiday`. `409` "A holiday already exists on this date" (an active one). Adding a date whose holiday was removed restores that row with the new name and `is_optional` |
-| PATCH | `/api/holidays/{id}` | HR | `{ "is_active": false }` removes, `{ "is_active": true }` restores (required) | `200 Holiday`. `404` "Holiday not found" |
+| PATCH | `/api/holidays/{id}` | HR | `{ "is_active": false }` removes, `{ "is_active": true }` restores (required) | `200 Holiday`. `404` "Holiday not found". The HR Holidays page removes upcoming holidays (with Undo); past ones stay read-only |
 
 Optional holidays are working days; an employee takes one with a FULL_LEAVE request, `leave_category: "OPTIONAL_HOLIDAY"` and its `holiday_id`.
 

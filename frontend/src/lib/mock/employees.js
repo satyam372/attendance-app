@@ -4,7 +4,7 @@ import { currentEmployee } from "./auth.js";
 import { delay, getDb, publicEmployee, saveDb } from "./db.js";
 import { uuid } from "./uuid.js";
 
-// Mock of /api/employees (HR only) and POST /api/holidays (HR only). Mirrors backend
+// Mock of /api/employees (HR only) and POST/PATCH /api/holidays (HR only). Mirrors backend
 // routes/employees.py, services/employee.py and routes/holidays.py.
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -57,9 +57,23 @@ export async function createHoliday(body) {
   const name = body.name?.trim() ?? "";
   if (!name || name.length > 100) throw new ApiError(422, "String should have at least 1 character");
   const db = getDb();
-  if (db.holidays.some((h) => h.holiday_date === body.holiday_date)) throw new ApiError(409, "A holiday already exists on this date");
-  const holiday = { id: uuid(), name, holiday_date: body.holiday_date, is_optional: Boolean(body.is_optional) };
-  db.holidays.push(holiday);
+  const existing = db.holidays.find((h) => h.holiday_date === body.holiday_date);
+  if (existing && existing.is_active !== false) throw new ApiError(409, "A holiday already exists on this date");
+  // holiday_date is unique, so a removed holiday on this date is restored with the new details
+  const holiday = existing ?? { id: uuid() };
+  Object.assign(holiday, { name, holiday_date: body.holiday_date, is_optional: Boolean(body.is_optional), is_active: true });
+  if (!existing) db.holidays.push(holiday);
   saveDb();
   return holiday;
+}
+
+/** PATCH /holidays/{id} with { is_active } → HolidayPublic. false removes the holiday, true restores it. */
+export async function setHolidayActive(id, isActive) {
+  await delay(400);
+  requireHr();
+  const holiday = getDb().holidays.find((h) => h.id === id);
+  if (!holiday) throw new ApiError(404, "Holiday not found");
+  holiday.is_active = isActive;
+  saveDb();
+  return { ...holiday };
 }

@@ -3,7 +3,7 @@ import { LeaveCategory, LeavePortion, Role, WorkMode } from "../domain/enums.js"
 import { validateRequest } from "../domain/requests.js";
 import { workingDaysInRange } from "../domain/rules.js";
 import { currentEmployee } from "./auth.js";
-import { delay, getDb, saveDb } from "./db.js";
+import { activeHolidays, delay, getDb, saveDb } from "./db.js";
 import { uuid } from "./uuid.js";
 
 // Mock of /api/holidays (GET) and /api/requests (POST, GET, decision). Mirrors backend
@@ -12,7 +12,7 @@ import { uuid } from "./uuid.js";
 export async function getHolidays() {
   await delay(200);
   currentEmployee(); // login required, like the backend
-  return [...getDb().holidays].sort((a, b) => a.holiday_date.localeCompare(b.holiday_date));
+  return activeHolidays(getDb()).sort((a, b) => a.holiday_date.localeCompare(b.holiday_date));
 }
 
 export async function createRequest(body) {
@@ -26,13 +26,13 @@ export async function createRequest(body) {
   const firstError = Object.values(fieldErrors)[0];
   if (firstError) throw new ApiError(422, firstError);
 
-  const closed = new Set(db.holidays.filter((h) => !h.is_optional).map((h) => h.holiday_date));
+  const closed = new Set(activeHolidays(db).filter((h) => !h.is_optional).map((h) => h.holiday_date));
   if (workingDaysInRange(body.from_date, body.to_date, closed).length === 0) {
     throw new ApiError(422, "The selected dates are all weekends or holidays.");
   }
 
   if (body.holiday_id) {
-    const holiday = db.holidays.find((h) => h.id === body.holiday_id);
+    const holiday = activeHolidays(db).find((h) => h.id === body.holiday_id); // a removed holiday cannot be requested
     if (!holiday || !holiday.is_optional || holiday.holiday_date !== body.from_date || body.leave_category !== LeaveCategory.OPTIONAL_HOLIDAY) {
       throw new ApiError(422, "Choose an optional holiday on the selected date.");
     }
@@ -113,7 +113,7 @@ const ATTENDANCE_VALUES = {
 
 /** Writes the approved request into attendance, like backend _apply_to_attendance. */
 function applyToAttendance(db, request) {
-  const closed = new Set(db.holidays.filter((h) => !h.is_optional).map((h) => h.holiday_date));
+  const closed = new Set(activeHolidays(db).filter((h) => !h.is_optional).map((h) => h.holiday_date));
   const days = workingDaysInRange(request.from_date, request.to_date, closed);
   const rowFor = (day) => db.attendance.find((r) => r.employee_id === request.employee_id && r.work_date === day);
   // Check every day before writing any, so a conflict leaves nothing half-applied

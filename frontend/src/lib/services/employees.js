@@ -20,3 +20,9 @@ export function createHoliday(body) {
   if (USE_MOCK_API) return mock.createHoliday(body);
   return apiFetch("/holidays", { method: "POST", body });
 }
+
+/** PATCH /holidays/{id} (HR) with { is_active } → HolidayPublic. false removes it (soft delete), true restores it. 404 if unknown. */
+export function setHolidayActive(id, isActive) {
+  if (USE_MOCK_API) return mock.setHolidayActive(id, isActive);
+  return apiFetch(`/holidays/${id}`, { method: "PATCH", body: { is_active: isActive } });
+}

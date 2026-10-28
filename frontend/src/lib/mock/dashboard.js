@@ -3,7 +3,7 @@ import { LeavePortion, Role } from "../domain/enums.js";
 import { Punctuality, punctuality } from "../domain/rules.js";
 import { isWeekend, toDateKey } from "../domain/time.js";
 import { currentEmployee } from "./auth.js";
-import { delay, getDb } from "./db.js";
+import { activeHolidays, delay, getDb } from "./db.js";
 
 // Mock of /api/dashboard/* (HR only). Mirrors backend services/dashboard.py: every active
 // employee who had joined by the day gets exactly one status; the summary counts those same
@@ -22,7 +22,7 @@ function targetDay(day) {
 }
 
 function isWorkingDay(db, day) {
-  return !isWeekend(day) && !db.holidays.some((h) => h.holiday_date === day && !h.is_optional);
+  return !isWeekend(day) && !activeHolidays(db).some((h) => h.holiday_date === day && !h.is_optional);
 }
 
 function statusOf(row, workingDay, day, today) {

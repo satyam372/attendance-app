@@ -7,7 +7,6 @@ from app.core.deps import CurrentUserDep, require_role
 from app.models.enums import Role
 from app.models.user import (
     Employee,
-    EmployeeBase,
     EmployeeCreate,
     EmployeePublic,
     EmployeeStatusUpdate,
@@ -30,8 +29,9 @@ router = APIRouter(
 )
 
 
-# response_model filters each Employee down to EmployeeBase, so password_hash never leaves
-@router.get("", response_model=list[EmployeeBase])
+# response_model filters each Employee down to EmployeePublic (with id, for PATCH /{id}),
+# so password_hash never leaves
+@router.get("", response_model=list[EmployeePublic])
 def get_employees(session: SessionDep) -> list[Employee]:
     return list_employees(session)
 

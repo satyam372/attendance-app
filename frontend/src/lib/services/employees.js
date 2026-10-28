@@ -3,7 +3,7 @@ import * as mock from "../mock/employees.js";
 
 // HR people and holiday management (backend routes/employees.py and routes/holidays.py).
 
-/** GET /employees (HR) → EmployeeBase[]: name, email, role, reports_to_id, is_active. No ids yet. */
+/** GET /employees (HR) → EmployeePublic[]: id, name, email, role, reports_to_id, is_active, must_change_password, created_at. */
 export function listEmployees() {
   if (USE_MOCK_API) return mock.listEmployees();
   return apiFetch("/employees");

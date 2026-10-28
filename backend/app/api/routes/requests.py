@@ -20,6 +20,7 @@ from app.services.request import (
     RequestNotFoundError,
     create_request,
     decide_request,
+    list_my_requests,
     list_requests,
 )
 
@@ -55,6 +56,13 @@ def raise_request(payload: RequestCreate, session: SessionDep, current_user: Cur
         return create_request(session, current_user, payload)
     except RequestError as error:
         raise _http_error(error) from None
+
+
+# Any logged-in employee sees only their own requests: the id comes from the session, never
+# from the URL. Keep it above any future GET "/{request_id}", or "me" would match as an id.
+@router.get("/me", response_model=list[RequestPublic])
+def get_my_requests(session: SessionDep, current_user: CurrentUserDep) -> list[Request]:
+    return list_my_requests(session, current_user)
 
 
 @router.get("")

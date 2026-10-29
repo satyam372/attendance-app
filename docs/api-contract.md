@@ -91,7 +91,7 @@ Not built yet:
 | Method | Path | Who | Body / query | Response |
 |---|---|---|---|---|
 | POST | `/api/requests` | any | `request_type`, `from_date`, `to_date`, `leave_half`, `leave_category`, `holiday_id`, `reason` (optional). Combination rules per schema.md | `201 Request` (status PENDING). `422` "The selected dates are all weekends or holidays.", "Choose an optional holiday on the selected date.", or a combination rule. `409` "You already have a request for some of these dates." |
-| GET | `/api/requests/me` | any | none | `200 Request[]`, the logged-in employee's own requests (every status), newest first. Not used by the frontend yet |
+| GET | `/api/requests/me` | any | none | `200 Request[]`, the logged-in employee's own requests (every status), newest first. Used by "My requests" on the Leave screen |
 | GET | `/api/requests?status=PENDING` | HR | `status` optional and repeatable: `?status=APPROVED&status=REJECTED` for the Decided list | `200 RequestWithEmployee[]`, newest first |
 | POST | `/api/requests/{id}/decision` | HR | `{ "status": "APPROVED" \| "REJECTED" }` | `200 Request`. Approval writes the attendance rows (working days only) in the same transaction. `404`, `409` "This request has already been decided.", `409` full-day leave on a day the employee already checked in |
 

@@ -27,3 +27,9 @@ export function decideRequest(id, status) {
   if (USE_MOCK_API) return mock.decideRequest(id, status);
   return apiFetch(`/requests/${id}/decision`, { method: "POST", body: { status } });
 }
+
+/** GET /requests/me → RequestPublic[]: the signed-in employee's own requests, every status, newest first. */
+export function getMyRequests() {
+  if (USE_MOCK_API) return mock.getMyRequests();
+  return apiFetch("/requests/me");
+}

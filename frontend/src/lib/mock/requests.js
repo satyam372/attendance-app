@@ -152,3 +152,13 @@ export async function decideRequest(id, status) {
   saveDb();
   return request;
 }
+
+/** GET /requests/me: own requests only (the id comes from the session), newest first. */
+export async function getMyRequests() {
+  await delay(250);
+  const employee = currentEmployee();
+  return getDb()
+    .requests.filter((r) => r.employee_id === employee.id)
+    .sort((a, b) => b.created_at.localeCompare(a.created_at))
+    .map((r) => ({ ...r }));
+}

@@ -1,13 +1,12 @@
 import { useEffect } from "react";
-import { Link } from "react-router-dom";
 
 import { LeaveForm } from "../components/leave/LeaveForm.jsx";
+import { MyRequests } from "../components/leave/MyRequests.jsx";
 import { UpcomingHolidays } from "../components/leave/UpcomingHolidays.jsx";
 
 /**
- * Leave screen (Leave + Desktop Leave artboards): apply for leave or WFH, upcoming holidays.
- * "My requests" and leave balances need backend endpoints that don't exist yet
- * (GET /api/requests/me, balances), so they show a short note instead of made-up data.
+ * Leave screen (Leave + Desktop Leave artboards): apply for leave or WFH, my requests with
+ * HR's decision, upcoming holidays. Leave balances wait for a backend endpoint.
  */
 export default function Leave() {
   useEffect(() => {
@@ -30,19 +29,7 @@ export default function Leave() {
         </section>
 
         <div className="flex flex-col gap-5">
-          <section aria-labelledby="my-requests-heading" className="flex flex-col gap-2 rounded-3xl border border-line bg-surface p-5">
-            <h2 id="my-requests-heading" className="m-0 text-base font-bold">
-              My requests
-            </h2>
-            <p className="m-0 text-sm text-ink-muted">
-              Your request list and leave balances are coming soon. Meanwhile, days you&rsquo;ve requested show as
-              &ldquo;Awaiting approval&rdquo; or &ldquo;Request rejected&rdquo; on your{" "}
-              <Link to="/attendance" className="font-semibold text-accent-ink">
-                attendance calendar
-              </Link>
-              .
-            </p>
-          </section>
+          <MyRequests />
           <UpcomingHolidays />
         </div>
       </div>

@@ -65,14 +65,15 @@ attendance-app/
     ├── package.json, .env.example (API_URL, USE_MOCK_API), .postcssrc, .proxyrc
     └── src/
         ├── index.html, main.jsx, App.jsx (routes), styles.css (Tailwind 4 + design tokens, light/dark)
-        ├── lib/api.js             # fetch wrapper, credentials: "include", ApiError
+        ├── lib/api.js             # fetch wrapper, credentials: "include", ApiError (JSON, or a Blob such as a photo)
+        ├── lib/image.js           # browser-only: decode a photo and render the 256×256 crop
         ├── lib/services/          # one module per API area; picks real API or mock via USE_MOCK_API
         ├── lib/mock/              # in-browser mock API + seed data (until the backend endpoints exist)
         ├── lib/domain/            # enums, time zone helpers, business rules (+ node:test tests)
         ├── auth/AuthContext.jsx   # session: me / login / logout (clears the React Query cache)
         ├── theme/ThemeContext.jsx # system / light / dark preference
         ├── hooks/                 # useAttendance (React Query), useNow (live clock)
-        ├── components/            # AppLayout, ProtectedRoute, ChangePasswordForm, LoginIllustration, layout/ (Sidebar, BottomNav),
+        ├── components/            # AppLayout, ProtectedRoute, ChangePasswordForm, LoginIllustration, profile/ (PhotoEditor), layout/ (Sidebar, BottomNav),
         │                          # home/ (CheckInCard, TodayTimes, HoursChart, MonthStats),
         │                          # attendance/ (MonthCalendar, DayDetail, DailyLog), leave/ (LeaveForm, MyRequests, UpcomingHolidays),
         │                          # hr/ (HrTabs, TeamMemberCard, RequestCard, AddEmployeeForm),

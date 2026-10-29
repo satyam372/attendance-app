@@ -10,6 +10,7 @@ import { Avatar } from "../ui/Avatar.jsx";
 import { Button } from "../ui/Button.jsx";
 import { Wordmark } from "../ui/Wordmark.jsx";
 import { itemsFor } from "./navItems.js";
+import { photoUrl } from "../../lib/services/profile.js";
 
 /** PC navigation (lg and up): a floating glass panel beside the content. */
 export function Sidebar() {
@@ -49,7 +50,7 @@ export function Sidebar() {
         </div>
         <div className="flex items-center gap-2.5 rounded-2xl surface-inset p-3">
           <Link to="/profile" className="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg" aria-label={`Profile: ${user.name}`}>
-            <Avatar name={user.name} className="size-9.5 text-[13px]" />
+            <Avatar name={user.name} src={photoUrl(user)} className="size-9.5 text-[13px]" />
             <span className="min-w-0">
               <span className="block truncate text-sm font-bold text-ink">{user.name}</span>
               <span className="block text-xs text-ink-muted">{ROLE_LABELS[user.role]}</span>

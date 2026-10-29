@@ -33,13 +33,15 @@ export async function createEmployee(body) {
   if (new TextEncoder().encode(body.password).length > 72) throw new ApiError(422, "Password must be at most 72 bytes");
   const db = getDb();
   if (db.employees.some((e) => e.email === email)) throw new ApiError(409, "An employee with this email already exists");
+  const role = body.role ?? Role.EMPLOYEE;
+  const reportsTo = checkManager(db, body.reports_to_id ?? null, role);
 
   const employee = {
     id: uuid(),
     name,
     email,
-    role: body.role ?? Role.EMPLOYEE,
-    reports_to_id: null,
+    role,
+    reports_to_id: reportsTo,
     is_active: body.is_active ?? true,
     must_change_password: true,
     created_at: new Date().toISOString(),
@@ -78,14 +80,37 @@ export async function setHolidayActive(id, isActive) {
   return { ...holiday };
 }
 
-/** PATCH /employees/{id} with { is_active }: soft delete, like services/employee.set_employee_active. */
-export async function setEmployeeActive(id, isActive) {
+/**
+ * reports_to rules (agreed 2026-10-29): an EMPLOYEE must report to an active MANAGER, because
+ * their manager approves their requests. Managers and HR may have none (HR approves theirs).
+ */
+function checkManager(db, reportsToId, role, selfId = null) {
+  if (!reportsToId) {
+    if (role === Role.EMPLOYEE) throw new ApiError(422, "Choose who this employee reports to.");
+    return null;
+  }
+  if (reportsToId === selfId) throw new ApiError(422, "Someone cannot report to themselves.");
+  const manager = db.employees.find((e) => e.id === reportsToId);
+  if (!manager || !manager.is_active || manager.role !== Role.MANAGER) throw new ApiError(422, "reports_to_id must be an active manager");
+  return reportsToId;
+}
+
+/** PATCH /employees/{id} with { is_active?, reports_to_id? }: soft delete/restore, or change the manager. */
+export async function updateEmployee(id, changes) {
   await delay(400);
   requireHr();
-  const employee = getDb().employees.find((e) => e.id === id);
+  const db = getDb();
+  const employee = db.employees.find((e) => e.id === id);
   if (!employee) throw new ApiError(404, "Employee not found");
-  if (employee.id === currentEmployee().id && !isActive) throw new ApiError(409, "You cannot deactivate your own account.");
-  employee.is_active = isActive;
+  if ("reports_to_id" in changes) employee.reports_to_id = checkManager(db, changes.reports_to_id, employee.role, employee.id);
+  if (changes.is_active === false) {
+    if (employee.id === currentEmployee().id) throw new ApiError(409, "You cannot deactivate your own account.");
+    // Their reports would be left with nobody to approve their requests
+    if (db.employees.some((e) => e.reports_to_id === employee.id && e.is_active)) {
+      throw new ApiError(409, `Assign ${employee.name}'s team to another manager first.`);
+    }
+  }
+  if ("is_active" in changes) employee.is_active = changes.is_active;
   saveDb();
   return publicEmployee(employee);
 }

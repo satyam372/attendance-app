@@ -117,8 +117,13 @@ Design decisions:
 - Weekends and holidays are skipped in leave/WFH date ranges.
 - Request status is **never stored in attendance**. Pending/rejected days in history are derived from the `request` table ("Awaiting approval", "Rejected"); attendance rows exist only once a request is APPROVED (or the employee checks in).
 - On approval, the backend creates or updates one attendance row per working day in the range and sets `request_id`. If a day already has a row: half-day leave and WFH update the leave/work-mode fields and keep `in_time`; full leave is rejected if the employee already checked in that day.
-- HR decides with APPROVED or REJECTED only; no decision comment. `decided_by_id` and `decided_at` are set by the server.
-- Approval routing (for now): **only HR** lists and decides requests, so `decided_by_id` is always an HR employee. Enforced in the app (HR-only routes + a role check in `decide_request`), because a foreign key cannot check the referenced employee's role. Later: let a `reports_to` manager decide for their direct reports.
+- The approver decides with APPROVED or REJECTED only; no decision comment. `decided_by_id` and `decided_at` are set by the server.
+- Approval routing (agreed 2026-10-29; frontend built on the mock, **backend change pending**):
+  - an EMPLOYEE's request is decided by their manager (`reports_to`), and every EMPLOYEE must have an active MANAGER
+  - MANAGER and HR requests are decided by HR
+  - HR sees every request and can override a manager's decision in exceptions
+  - nobody decides their own request
+  - enforced in the backend (`decide_request`), because a foreign key cannot check roles. The shared frontend helper is `lib/domain/approvals.js`.
 - Role checks must be enforced **in the backend** on every route, not only by hiding UI.
 - Managers and HR are also employees (they check in, request leave, etc.). Navigation is layered: employee screens for everyone, + team screens for MANAGER, + everything for HR.
 

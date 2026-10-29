@@ -2,21 +2,28 @@ import clsx from "clsx";
 import { useEffect, useRef } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 
+import { useAuth } from "../../auth/AuthContext.jsx";
+import { useEmployees } from "../../hooks/useEmployees.js";
 import { useRequestList } from "../../hooks/useRequests.js";
+import { splitForHr } from "../../lib/domain/approvals.js";
 
 /**
  * Tabs across the HR pages. The bottom tab bar's "Team" tab covers all of them on phones,
  * where this bar scrolls sideways and keeps the current tab in view.
  */
 export function HrTabs() {
+  const { user } = useAuth();
   const pending = useRequestList(["PENDING"]);
-  const count = pending.data?.length ?? 0;
+  const employees = useEmployees();
+  // Badge: only what HR decides (managers decide their teams' requests)
+  const byId = new Map((employees.data ?? []).map((e) => [e.id, e]));
+  const count = splitForHr(pending.data ?? [], user, byId).forYou.filter((item) => item.mode === "decide").length;
   const navRef = useRef(null);
   const { pathname } = useLocation();
   const tabs = [
     { to: "/hr", label: "Team today", short: "Today", end: true },
     { to: "/hr/sheet", label: "Sheet" },
-    { to: "/hr/approvals", label: "Approvals", badge: count },
+    { to: "/hr/approvals", label: "Requests", badge: count },
     { to: "/hr/team", label: "People" },
     { to: "/hr/holidays", label: "Holidays" },
   ];

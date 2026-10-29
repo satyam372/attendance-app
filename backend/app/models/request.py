@@ -108,3 +108,7 @@ class RequestPublic(RequestBase):
     decided_by_id: uuid.UUID | None
     decided_at: datetime | None
     created_at: datetime
+    # Filled in by services/request.py, not stored: "Waiting for Rohan" / "Approved by Rohan".
+    # approver_name is who may decide it now: the requester's manager, or "HR".
+    approver_name: str
+    decided_by_name: str | None = None

@@ -38,7 +38,12 @@ Until an endpoint is used by a screen, the frontend can use an in-browser mock w
 // Request (RequestPublic)
 { "id": "c41a…", "employee_id": "5f0c…", "request_type": "HALF_DAY_LEAVE", "from_date": "2026-10-14", "to_date": "2026-10-14",
   "leave_half": "FIRST_HALF", "leave_category": "CASUAL", "holiday_id": null, "reason": "Bank work",
-  "status": "PENDING", "decided_by_id": null, "decided_at": null, "created_at": "2026-10-12T09:15:00Z" }
+  "status": "PENDING", "decided_by_id": null, "decided_at": null, "created_at": "2026-10-12T09:15:00Z",
+  "approver_name": "Rohan Patil", "decided_by_name": null }
+// approver_name: who may decide it now (the requester's manager, or "HR") → "Waiting for Rohan Patil".
+// decided_by_name: who approved or rejected it, null while PENDING → "Approved by Rohan Patil".
+// Both are calculated on every response, not stored. If HR overrides, decided_by_name is the HR
+// person while approver_name still names the manager.
 
 // RequestWithEmployee (HR list) = Request + "employee_name": "Poorva Shipugade"
 

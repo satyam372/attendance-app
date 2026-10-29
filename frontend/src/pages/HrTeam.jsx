@@ -11,7 +11,6 @@ import { Button } from "../components/ui/Button.jsx";
 import { SelectField } from "../components/ui/Fields.jsx";
 import { Skeleton } from "../components/ui/Skeleton.jsx";
 import { useEmployees, useUpdateEmployee } from "../hooks/useEmployees.js";
-import { CAN_CHANGE_MANAGER } from "../lib/services/employees.js";
 import { Role, ROLE_LABELS } from "../lib/domain/enums.js";
 
 const ROLE_CHIP = {
@@ -60,7 +59,7 @@ function PersonRow({ person, isMe, managerName, managers, panel, busy, onOpen, o
       </div>
       {!isMe && !panel && (
         <div className="-mr-2 flex shrink-0">
-          {CAN_CHANGE_MANAGER && person.is_active && person.role === Role.EMPLOYEE && (
+          {person.is_active && person.role === Role.EMPLOYEE && (
             <Button variant="ghost" size="icon" aria-label={`Change ${person.name}'s manager`} onClick={() => onOpen(person, "manager")}>
               <UserCog className="size-4.5" aria-hidden="true" />
             </Button>

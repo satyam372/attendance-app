@@ -4,11 +4,11 @@ import { describe, it } from "node:test";
 import { approverName, approverOf, ApproverKind, decisionRight, splitForHr } from "./approvals.js";
 import { Role } from "./enums.js";
 
-const hr = { id: "hr", role: Role.HR, reports_to_id: null };
-const hr2 = { id: "hr2", role: Role.HR, reports_to_id: null };
-const manager = { id: "m", name: "Satyam", role: Role.MANAGER, reports_to_id: null };
-const otherManager = { id: "m2", role: Role.MANAGER, reports_to_id: null };
-const employee = { id: "e", role: Role.EMPLOYEE, reports_to_id: "m" };
+const hr = { id: "hr", role: Role.HR, reports_to_id: null, is_active: true };
+const hr2 = { id: "hr2", role: Role.HR, reports_to_id: null, is_active: true };
+const manager = { id: "m", name: "Satyam", role: Role.MANAGER, reports_to_id: null, is_active: true };
+const otherManager = { id: "m2", role: Role.MANAGER, reports_to_id: null, is_active: true };
+const employee = { id: "e", role: Role.EMPLOYEE, reports_to_id: "m", is_active: true };
 
 describe("approverOf", () => {
   it("sends an employee's request to their manager, everyone else's to HR", () => {
@@ -54,5 +54,14 @@ describe("splitForHr", () => {
     const { forYou, withManagers } = splitForHr(pending, hr, byId);
     assert.deepEqual(forYou.map((x) => [x.request.id, x.mode]), [[1, "decide"], [3, "own"], [4, "decide"]]);
     assert.deepEqual(withManagers.map((x) => [x.request.id, x.mode, x.approver]), [[2, "override", "Satyam"]]);
+  });
+});
+
+describe("a manager who left", () => {
+  it("hands their team's requests to HR, like the backend's approver_name", () => {
+    const byId = new Map([[manager.id, { ...manager, is_active: false }]]);
+    assert.equal(approverOf(employee, byId).kind, ApproverKind.HR);
+    assert.equal(approverName(employee, byId), "HR");
+    assert.equal(decisionRight(hr, employee, byId), "decide");
   });
 });

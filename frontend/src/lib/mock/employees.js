@@ -34,7 +34,7 @@ export async function createEmployee(body) {
   const db = getDb();
   if (db.employees.some((e) => e.email === email)) throw new ApiError(409, "An employee with this email already exists");
   const role = body.role ?? Role.EMPLOYEE;
-  const reportsTo = checkManager(db, body.reports_to_id ?? null, role);
+  const reportsTo = checkManager(db, body.reports_to_id ?? null);
 
   const employee = {
     id: uuid(),
@@ -81,17 +81,18 @@ export async function setHolidayActive(id, isActive) {
 }
 
 /**
- * reports_to rules (agreed 2026-10-29): an EMPLOYEE must report to an active MANAGER, because
- * their manager approves their requests. Managers and HR may have none (HR approves theirs).
+ * reports_to rules, as backend services/employee._check_manager: an active MANAGER, or null
+ * (then HR decides their requests); never themselves or someone in their own team.
  */
-function checkManager(db, reportsToId, role, selfId = null) {
-  if (!reportsToId) {
-    if (role === Role.EMPLOYEE) throw new ApiError(422, "Choose who this employee reports to.");
-    return null;
-  }
-  if (reportsToId === selfId) throw new ApiError(422, "Someone cannot report to themselves.");
+function checkManager(db, reportsToId, selfId = null) {
+  if (!reportsToId) return null; // allowed (HR then decides); the add form still asks for one
   const manager = db.employees.find((e) => e.id === reportsToId);
   if (!manager || !manager.is_active || manager.role !== Role.MANAGER) throw new ApiError(422, "reports_to_id must be an active manager");
+  // Self-reference or a loop (A -> B -> A), like backend _reports_to_chain
+  for (let id = reportsToId, seen = new Set(); id && !seen.has(id); id = db.employees.find((e) => e.id === id)?.reports_to_id) {
+    if (id === selfId) throw new ApiError(422, "An employee cannot report to themselves or to someone in their own team.");
+    seen.add(id);
+  }
   return reportsToId;
 }
 
@@ -102,7 +103,7 @@ export async function updateEmployee(id, changes) {
   const db = getDb();
   const employee = db.employees.find((e) => e.id === id);
   if (!employee) throw new ApiError(404, "Employee not found");
-  if ("reports_to_id" in changes) employee.reports_to_id = checkManager(db, changes.reports_to_id, employee.role, employee.id);
+  if ("reports_to_id" in changes) employee.reports_to_id = checkManager(db, changes.reports_to_id, employee.id);
   if (changes.is_active === false) {
     if (employee.id === currentEmployee().id) throw new ApiError(409, "You cannot deactivate your own account.");
     // Their reports would be left with nobody to approve their requests

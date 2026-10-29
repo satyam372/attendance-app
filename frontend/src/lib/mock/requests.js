@@ -105,7 +105,7 @@ function withNames(db, request) {
 
 /**
  * GET /requests?status=… (HR or manager): RequestWithEmployee[], newest first. No statuses = all.
- * HR sees every request; a manager sees only the requests they decide (their direct reports).
+ * HR sees every request; a manager only the ones they decide; nobody their own.
  */
 export async function listRequests(statuses = []) {
   await delay(300);
@@ -113,7 +113,9 @@ export async function listRequests(statuses = []) {
   const db = getDb();
   const byId = new Map(db.employees.map((e) => [e.id, e]));
   return db.requests
-    .filter((r) => user.role === Role.HR || decisionRight(user, byId.get(r.employee_id)) === "decide")
+    // Never your own (they are in /requests/me); a manager only what they decide
+    .filter((r) => r.employee_id !== user.id)
+    .filter((r) => user.role === Role.HR || decisionRight(user, byId.get(r.employee_id), byId) === "decide")
     .filter((r) => statuses.length === 0 || statuses.includes(r.status))
     .sort((a, b) => b.created_at.localeCompare(a.created_at))
     .map((r) => ({ ...withNames(db, r), employee_name: byId.get(r.employee_id)?.name ?? "Unknown" }));
@@ -161,8 +163,10 @@ export async function decideRequest(id, status) {
   const request = db.requests.find((r) => r.id === id);
   if (!request) throw new ApiError(404, "Request not found.");
   // Manager for their reports, HR for managers/HR (or as an override); never your own request
-  const requester = db.employees.find((e) => e.id === request.employee_id);
-  if (!decisionRight(decider, requester)) throw new ApiError(403, "You can't decide this request.");
+  const byId = new Map(db.employees.map((e) => [e.id, e]));
+  if (!decisionRight(decider, byId.get(request.employee_id), byId)) {
+    throw new ApiError(403, "You can only decide requests from your own team, and never your own.");
+  }
   if (request.status !== "PENDING") throw new ApiError(409, "This request has already been decided.");
   if (status === "APPROVED") applyToAttendance(db, request);
   request.status = status;

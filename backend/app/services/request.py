@@ -12,7 +12,7 @@ from sqlmodel import Session, select
 from app.models.attendance import Attendance
 from app.models.enums import ApprovalStatus, LeavePortion, RequestType, Role, WorkMode
 from app.models.holiday import Holiday
-from app.models.request import Request, RequestCreate
+from app.models.request import Request, RequestCreate, RequestPublic
 from app.models.user import Employee
 from app.schemas.request import RequestWithEmployee
 from app.services.holiday import working_days_between
@@ -90,7 +90,7 @@ def list_requests(
     EMPLOYEEs who report to them (the ones they may decide). Nobody sees their own requests
     here, because nobody decides their own (they are in GET /api/requests/me)."""
     query = (
-        select(Request, Employee.name)
+        select(Request)
         .join(Employee, Request.employee_id == Employee.id)
         .order_by(Request.created_at.desc())
     )
@@ -99,20 +99,66 @@ def list_requests(
         query = query.where(Employee.reports_to_id == decider.id, Employee.role == Role.EMPLOYEE)
     if statuses:
         query = query.where(Request.status.in_(statuses))
+    requests = list(session.exec(query).all())
+    people = _people(session, requests)
     return [
-        RequestWithEmployee.model_validate(request, update={"employee_name": name})
-        for request, name in session.exec(query).all()
+        RequestWithEmployee.model_validate(
+            request,
+            update={**_names(request, people), "employee_name": people[request.employee_id].name},
+        )
+        for request in requests
     ]
 
 
-def list_my_requests(session: Session, employee: Employee) -> list[Request]:
+def list_my_requests(session: Session, employee: Employee) -> list[RequestPublic]:
     """The employee's own requests, every status, newest first."""
     query = (
         select(Request)
         .where(Request.employee_id == employee.id)
         .order_by(Request.created_at.desc())
     )
-    return list(session.exec(query).all())
+    return to_public(session, list(session.exec(query).all()))
+
+
+def _people(session: Session, requests: list[Request]) -> dict[uuid.UUID, Employee]:
+    """Everyone a list of requests mentions (requesters, deciders, requesters' managers), loaded
+    in at most two queries instead of one per request."""
+    ids = {r.employee_id for r in requests} | {r.decided_by_id for r in requests if r.decided_by_id}
+    people = {e.id: e for e in session.exec(select(Employee).where(Employee.id.in_(ids))).all()}
+    manager_ids = {e.reports_to_id for e in people.values() if e.reports_to_id} - people.keys()
+    if manager_ids:
+        managers = session.exec(select(Employee).where(Employee.id.in_(manager_ids))).all()
+        people |= {e.id: e for e in managers}
+    return people
+
+
+def approver_name(requester: Employee, manager: Employee | None) -> str:
+    """Who decides this person's requests, by the same rule as can_decide(): an EMPLOYEE's
+    active manager, otherwise HR (managers, HR staff, employees without a manager)."""
+    if (
+        requester.role == Role.EMPLOYEE
+        and manager is not None
+        and manager.is_active
+        and manager.role == Role.MANAGER
+    ):
+        return manager.name
+    return "HR"
+
+
+def _names(request: Request, people: dict[uuid.UUID, Employee]) -> dict[str, str | None]:
+    requester = people[request.employee_id]
+    manager = people.get(requester.reports_to_id) if requester.reports_to_id else None
+    decider = people.get(request.decided_by_id) if request.decided_by_id else None
+    return {
+        "approver_name": approver_name(requester, manager),
+        "decided_by_name": decider.name if decider else None,
+    }
+
+
+def to_public(session: Session, requests: list[Request]) -> list[RequestPublic]:
+    """Response shape with approver_name and decided_by_name filled in."""
+    people = _people(session, requests)
+    return [RequestPublic.model_validate(r, update=_names(r, people)) for r in requests]
 
 
 def _attendance_values(request: Request) -> dict:

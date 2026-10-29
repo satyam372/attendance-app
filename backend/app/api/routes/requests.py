@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from app.core.database import SessionDep
 from app.core.deps import CurrentUserDep, require_role
 from app.models.enums import ApprovalStatus, Role
-from app.models.request import Request, RequestCreate, RequestPublic
+from app.models.request import RequestCreate, RequestPublic
 from app.models.user import Employee
 from app.schemas.request import RequestDecision, RequestWithEmployee
 from app.services.request import (
@@ -22,6 +22,7 @@ from app.services.request import (
     decide_request,
     list_my_requests,
     list_requests,
+    to_public,
 )
 
 router = APIRouter(prefix="/requests", tags=["requests"])
@@ -54,17 +55,20 @@ def _http_error(error: RequestError) -> HTTPException:
 
 # Any logged-in employee (managers and HR too) raises requests for themselves
 @router.post("", response_model=RequestPublic, status_code=status.HTTP_201_CREATED)
-def raise_request(payload: RequestCreate, session: SessionDep, current_user: CurrentUserDep) -> Request:
+def raise_request(
+    payload: RequestCreate, session: SessionDep, current_user: CurrentUserDep
+) -> RequestPublic:
     try:
-        return create_request(session, current_user, payload)
+        request = create_request(session, current_user, payload)
     except RequestError as error:
         raise _http_error(error) from None
+    return to_public(session, [request])[0]
 
 
 # Any logged-in employee sees only their own requests: the id comes from the session, never
 # from the URL. Keep it above any future GET "/{request_id}", or "me" would match as an id.
 @router.get("/me", response_model=list[RequestPublic])
-def get_my_requests(session: SessionDep, current_user: CurrentUserDep) -> list[Request]:
+def get_my_requests(session: SessionDep, current_user: CurrentUserDep) -> list[RequestPublic]:
     return list_my_requests(session, current_user)
 
 
@@ -83,8 +87,9 @@ def get_requests(
 @router.post("/{request_id}/decision", response_model=RequestPublic)
 def decide(
     request_id: uuid.UUID, payload: RequestDecision, session: SessionDep, decider: DeciderDep
-) -> Request:
+) -> RequestPublic:
     try:
-        return decide_request(session, request_id, decider, payload.status)
+        request = decide_request(session, request_id, decider, payload.status)
     except RequestError as error:
         raise _http_error(error) from None
+    return to_public(session, [request])[0]

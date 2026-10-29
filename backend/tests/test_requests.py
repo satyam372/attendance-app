@@ -114,3 +114,65 @@ def test_employee_cannot_list_requests(client, team):
     response = client.get("/api/requests", headers=auth(team["report"]))
 
     assert response.status_code == 403
+
+
+@pytest.mark.parametrize(
+    ("requester", "approver"),
+    [
+        ("report", "Manager"),  # an employee's manager
+        ("no_manager", "HR"),  # employee without a manager
+        ("manager", "HR"),  # managers' requests go to HR
+        ("sub_manager", "HR"),  # even when a manager reports to another manager
+        ("hr", "HR"),  # HR staff's requests go to (another) HR
+    ],
+)
+def test_approver_name_in_my_requests(client, team, raise_request, requester, approver):
+    raise_request(team[requester])
+
+    response = client.get("/api/requests/me", headers=auth(team[requester]))
+
+    assert response.status_code == 200
+    [item] = response.json()
+    assert item["approver_name"] == approver
+    assert item["decided_by_name"] is None
+
+
+def test_inactive_manager_falls_back_to_hr(client, session, team, raise_request):
+    team["manager"].is_active = False
+    session.add(team["manager"])
+    session.commit()
+    raise_request(team["report"])
+
+    response = client.get("/api/requests/me", headers=auth(team["report"]))
+
+    assert response.json()[0]["approver_name"] == "HR"
+
+
+def test_decided_by_name_after_decision(client, team, raise_request):
+    request = raise_request(team["report"])
+
+    decision = decide(client, request, team["hr"], status="REJECTED")
+    mine = client.get("/api/requests/me", headers=auth(team["report"])).json()[0]
+
+    assert decision.json()["decided_by_name"] == "Hr"
+    assert mine["decided_by_name"] == "Hr"
+    assert mine["approver_name"] == "Manager"  # who it was routed to; HR overrode it
+
+
+def test_approvals_list_has_names(client, team, raise_request):
+    raise_request(team["report"])
+
+    [item] = client.get("/api/requests", headers=auth(team["manager"])).json()
+
+    assert item["employee_name"] == "Report"
+    assert item["approver_name"] == "Manager"
+    assert item["decided_by_name"] is None
+
+
+def test_new_request_response_has_approver(client, team):
+    body = {"request_type": "FULL_WFH", "from_date": str(DAY), "to_date": str(DAY)}
+
+    response = client.post("/api/requests", json=body, headers=auth(team["report"]))
+
+    assert response.status_code == 201
+    assert response.json()["approver_name"] == "Manager"

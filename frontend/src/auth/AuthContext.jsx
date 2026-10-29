@@ -64,7 +64,13 @@ export function AuthProvider({ children }) {
     return user;
   }, []);
 
-  const value = useMemo(() => ({ ...state, login, logout, changePassword }), [state, login, logout, changePassword]);
+  // After a change to the signed-in user's own record (e.g. a new photo): the session stays as is
+  const updateUser = useCallback((user) => setState({ status: "authenticated", user }), []);
+
+  const value = useMemo(
+    () => ({ ...state, login, logout, changePassword, updateUser }),
+    [state, login, logout, changePassword, updateUser],
+  );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

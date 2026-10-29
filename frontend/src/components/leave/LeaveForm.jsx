@@ -188,7 +188,7 @@ export function LeaveForm() {
         </div>
       )}
 
-      <p className="m-0 rounded-xl bg-field px-3.5 py-2.5 text-[13px] text-ink-soft" aria-live="polite">
+      <p className="m-0 rounded-xl surface-inset px-3.5 py-2.5 text-[13px] text-ink-soft" aria-live="polite">
         {isOptionalHoliday
           ? "One day off on the holiday you choose."
           : days > 0

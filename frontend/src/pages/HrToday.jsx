@@ -77,7 +77,7 @@ export default function HrToday() {
             {s ? ` · ${s.team_size} ${s.team_size === 1 ? "person" : "people"}` : ""}
           </p>
         </div>
-        <div className="flex items-center gap-1 rounded-xl border border-line bg-surface p-1">
+        <div className="flex items-center gap-1 rounded-xl surface-control p-1">
           <button type="button" onClick={() => go(-1)} aria-label="Previous day" className="grid size-10 cursor-pointer place-items-center rounded-lg hover:bg-field">
             <ChevronLeft className="size-4.5" aria-hidden="true" />
           </button>
@@ -110,7 +110,7 @@ export default function HrToday() {
       </header>
 
       {s && !s.is_working_day && (
-        <p className="m-0 flex items-center gap-2.5 rounded-2xl border border-line bg-surface px-4 py-3 text-sm text-ink-soft">
+        <p className="m-0 flex items-center gap-2.5 rounded-2xl surface-card px-4 py-3 text-sm text-ink-soft">
           <CalendarClock className="size-5 text-accent-ink" aria-hidden="true" />
           {holiday ? `${holiday.name}: a company holiday.` : "Weekend."} No one is expected in; check-ins on this day don&rsquo;t count as late.
         </p>
@@ -129,7 +129,7 @@ export default function HrToday() {
             {summary.isLoading
               ? [0, 1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-22" />)
               : cards.map(({ label, value, note, category }) => (
-                  <div key={label} className="flex flex-col gap-1 rounded-[18px] border border-line bg-surface px-4 py-3.5">
+                  <div key={label} className="flex flex-col gap-1 rounded-[18px] surface-card px-4 py-3.5">
                     <dt className="flex items-center gap-2 text-[13px] font-semibold text-ink-muted">
                       <StatusDot category={category} />
                       {label}
@@ -156,7 +156,7 @@ export default function HrToday() {
               (() => {
                 const shown = members.filter((m) => matches(filter, m));
                 return shown.length === 0 ? (
-                  <p className="m-0 rounded-2xl border border-line bg-surface py-8 text-center text-sm text-ink-muted">Nobody here.</p>
+                  <p className="m-0 rounded-2xl surface-card py-8 text-center text-sm text-ink-muted">Nobody here.</p>
                 ) : (
                   <ul className={clsx("m-0 grid list-none gap-3 p-0 sm:grid-cols-2 xl:grid-cols-3")}>
                     {shown.map((member) => (

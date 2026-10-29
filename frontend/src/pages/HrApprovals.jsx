@@ -82,7 +82,7 @@ export default function HrApprovals() {
         <Skeleton className="h-56 w-full" />
       ) : tab !== "decided" ? (
         groups[tab].length === 0 ? (
-          <p className="m-0 rounded-3xl border border-line bg-surface py-10 text-center text-sm text-ink-muted">{EMPTY[tab]}</p>
+          <p className="m-0 rounded-3xl surface-card py-10 text-center text-sm text-ink-muted">{EMPTY[tab]}</p>
         ) : (
           <ul className="m-0 grid list-none gap-4 p-0 md:grid-cols-2 2xl:grid-cols-3">
             {groups[tab].map(({ request, mode, approver }) => (
@@ -91,9 +91,9 @@ export default function HrApprovals() {
           </ul>
         )
       ) : decided.data.length === 0 ? (
-        <p className="m-0 rounded-3xl border border-line bg-surface py-10 text-center text-sm text-ink-muted">Nothing decided yet.</p>
+        <p className="m-0 rounded-3xl surface-card py-10 text-center text-sm text-ink-muted">Nothing decided yet.</p>
       ) : (
-        <section aria-label="Decided requests" className="rounded-3xl border border-line bg-surface px-5 py-1.5">
+        <section aria-label="Decided requests" className="rounded-3xl surface-card px-5 py-1.5">
           <ul className="m-0 list-none p-0">
             {decided.data.map((request) => (
               <DecidedRequestRow key={request.id} request={request} />

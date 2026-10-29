@@ -26,7 +26,7 @@ export default function Leave() {
       </header>
 
       <div className="flex flex-col gap-5 lg:grid lg:grid-cols-[minmax(340px,1fr)_minmax(320px,1fr)] lg:items-start xl:grid-cols-[minmax(380px,1.1fr)_minmax(340px,1fr)]">
-        <section aria-labelledby="apply-heading" className="flex flex-col gap-4 rounded-3xl border border-line bg-surface p-5 lg:p-6">
+        <section aria-labelledby="apply-heading" className="flex flex-col gap-4 rounded-3xl surface-card p-5 lg:p-6">
           <h2 id="apply-heading" className="m-0 text-base font-bold">
             Apply for leave or WFH
           </h2>

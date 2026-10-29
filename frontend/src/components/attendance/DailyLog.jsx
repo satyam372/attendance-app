@@ -8,7 +8,7 @@ import { StatusChip } from "./StatusChip.jsx";
 /** PC "Daily log" table, newest first. Rows select the day on the calendar. */
 export function DailyLog({ days, selected, onSelect }) {
   return (
-    <section aria-labelledby="daily-log-heading" className="flex min-w-0 flex-col gap-3 rounded-3xl border border-line bg-surface p-5">
+    <section aria-labelledby="daily-log-heading" className="flex min-w-0 flex-col gap-3 rounded-3xl surface-card p-5">
       <h2 id="daily-log-heading" className="m-0 text-base font-bold">
         Daily log
       </h2>

@@ -42,7 +42,7 @@ function HolidayRow({ holiday, past, confirming, removing, onAskRemove, onConfir
         </Button>
       )}
       {confirming && (
-        <div role="group" aria-label={`Remove ${holiday.name}?`} className="flex w-full flex-wrap items-center gap-x-3 gap-y-2 rounded-xl bg-field px-3.5 py-2.5">
+        <div role="group" aria-label={`Remove ${holiday.name}?`} className="flex w-full flex-wrap items-center gap-x-3 gap-y-2 rounded-xl surface-inset px-3.5 py-2.5">
           <p className="m-0 min-w-0 flex-1 basis-48 text-sm text-ink-soft">
             Remove <strong className="text-ink">{holiday.name}</strong>?{" "}
             {holiday.is_optional ? "Employees can no longer request it." : "It becomes a working day again."}
@@ -157,13 +157,13 @@ export default function HrHolidays() {
             <Skeleton className="h-64 w-full" />
           ) : (
             <>
-              <section aria-labelledby="upcoming-heading" className="rounded-3xl border border-line bg-surface px-5 pt-4 pb-1.5">
+              <section aria-labelledby="upcoming-heading" className="rounded-3xl surface-card px-5 pt-4 pb-1.5">
                 <h2 id="upcoming-heading" className="m-0 mb-1 text-base font-bold">
                   Upcoming ({upcoming.length})
                 </h2>
                 <ErrorAlert className="my-2">{setActive.error?.message}</ErrorAlert>
                 {removed && (
-                  <div role="status" className="my-2 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-field py-1.5 pr-1.5 pl-3.5 text-sm">
+                  <div role="status" className="my-2 flex flex-wrap items-center justify-between gap-2 rounded-xl surface-inset py-1.5 pr-1.5 pl-3.5 text-sm">
                     <span className="min-w-0">
                       Removed <strong>{removed.name}</strong>.
                     </span>
@@ -191,7 +191,7 @@ export default function HrHolidays() {
                 )}
               </section>
               {past.length > 0 && (
-                <section aria-labelledby="past-heading" className="rounded-3xl border border-line bg-surface px-5 pt-4 pb-1.5">
+                <section aria-labelledby="past-heading" className="rounded-3xl surface-card px-5 pt-4 pb-1.5">
                   <h2 id="past-heading" className="m-0 mb-1 text-base font-bold">
                     Already passed ({past.length})
                   </h2>
@@ -206,14 +206,14 @@ export default function HrHolidays() {
           )}
         </div>
 
-        <section aria-labelledby="add-holiday-heading" className="flex flex-col gap-4 rounded-3xl border border-line bg-surface p-5">
+        <section aria-labelledby="add-holiday-heading" className="flex flex-col gap-4 rounded-3xl surface-card p-5">
           <h2 id="add-holiday-heading" className="m-0 text-base font-bold">
             Add holiday
           </h2>
           <form noValidate onSubmit={handleSubmit} className="flex flex-col gap-4">
             <TextField label="Holiday name" placeholder="e.g. Diwali (Lakshmi Puja)" value={form.name} onChange={(e) => update({ name: e.target.value })} error={errors.name} />
             <DateField label="Date" value={form.holiday_date} onChange={(e) => update({ holiday_date: e.target.value })} error={errors.date} />
-            <label className="flex cursor-pointer items-start gap-3 rounded-xl bg-field px-3.5 py-3 text-sm">
+            <label className="flex cursor-pointer items-start gap-3 rounded-xl surface-inset px-3.5 py-3 text-sm">
               <input
                 type="checkbox"
                 checked={form.is_optional}

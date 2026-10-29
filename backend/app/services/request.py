@@ -104,7 +104,11 @@ def list_requests(
     return [
         RequestWithEmployee.model_validate(
             request,
-            update={**_names(request, people), "employee_name": people[request.employee_id].name},
+            update={
+                **_names(request, people),
+                "employee_name": people[request.employee_id].name,
+                "photo_updated_at": people[request.employee_id].photo_updated_at,
+            },
         )
         for request in requests
     ]

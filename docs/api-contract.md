@@ -38,7 +38,12 @@ Until an endpoint is used by a screen, the frontend can use an in-browser mock w
 // Request (RequestPublic)
 { "id": "c41a…", "employee_id": "5f0c…", "request_type": "HALF_DAY_LEAVE", "from_date": "2026-10-14", "to_date": "2026-10-14",
   "leave_half": "FIRST_HALF", "leave_category": "CASUAL", "holiday_id": null, "reason": "Bank work",
-  "status": "PENDING", "decided_by_id": null, "decided_at": null, "created_at": "2026-10-12T09:15:00Z" }
+  "status": "PENDING", "decided_by_id": null, "decided_at": null, "created_at": "2026-10-12T09:15:00Z",
+  "approver_name": "Rohan Patil", "decided_by_name": null }
+// approver_name: who may decide it now (the requester's manager, or "HR") → "Waiting for Rohan Patil".
+// decided_by_name: who approved or rejected it, null while PENDING → "Approved by Rohan Patil".
+// Both are calculated on every response, not stored. If HR overrides, decided_by_name is the HR
+// person while approver_name still names the manager.
 
 // RequestWithEmployee (HR list) = Request + "employee_name": "Poorva Shipugade"
 
@@ -67,7 +72,7 @@ API-only enums (not stored in the database):
 | GET | `/api/auth/me` | any | none | `200 Employee`, or `401` when not signed in |
 | POST | `/api/auth/change-password` | any (own password only) | `{ "current_password", "new_password" }`. New password: 8+ characters, at most 72 bytes | `200 Employee` with `must_change_password: false`; the user stays signed in. `400` "Current password is incorrect", `400` "Choose a password different from the current one", `422` policy |
 
-When `must_change_password` is `true` (accounts created by HR), show the change-password screen before anything else. "Confirm new password" is checked in the form only.
+When `must_change_password` is `true` (accounts created by HR), show the change-password screen before anything else. "Confirm new password" is checked in the form only. The frontend does this at `/change-password` (every signed-in route redirects there until the change succeeds); anyone can also change their password from Profile.
 
 ## Attendance
 
@@ -91,8 +96,9 @@ Not built yet:
 | Method | Path | Who | Body / query | Response |
 |---|---|---|---|---|
 | POST | `/api/requests` | any | `request_type`, `from_date`, `to_date`, `leave_half`, `leave_category`, `holiday_id`, `reason` (optional). Combination rules per schema.md | `201 Request` (status PENDING). `422` "The selected dates are all weekends or holidays.", "Choose an optional holiday on the selected date.", or a combination rule. `409` "You already have a request for some of these dates." |
-| GET | `/api/requests?status=PENDING` | HR | `status` optional and repeatable: `?status=APPROVED&status=REJECTED` for the Decided list | `200 RequestWithEmployee[]`, newest first |
-| POST | `/api/requests/{id}/decision` | HR | `{ "status": "APPROVED" \| "REJECTED" }` | `200 Request`. Approval writes the attendance rows (working days only) in the same transaction. `404`, `409` "This request has already been decided.", `409` full-day leave on a day the employee already checked in |
+| GET | `/api/requests/me` | any | none | `200 Request[]`, the logged-in employee's own requests (every status), newest first. Used by "My requests" on the Leave screen |
+| GET | `/api/requests?status=PENDING` | HR, MANAGER | `status` optional and repeatable: `?status=APPROVED&status=REJECTED` for the Decided list | `200 RequestWithEmployee[]`, newest first. HR: everyone's; manager: only their direct reports who are EMPLOYEEs. Never the caller's own requests (those are in `/api/requests/me`) |
+| POST | `/api/requests/{id}/decision` | HR, MANAGER | `{ "status": "APPROVED" \| "REJECTED" }` | `200 Request`. Approval writes the attendance rows (working days only) in the same transaction. `403` "You can only decide requests from your own team, and never your own.", `404`, `409` "This request has already been decided.", `409` full-day leave on a day the employee already checked in |
 
 Combination rules (`RequestBase.check_combination`, mirrored in `frontend/src/lib/domain/requests.js`):
 - `to_date >= from_date`; half-day types (`HALF_DAY_LEAVE`, `HALF_LEAVE_HALF_WFH`) cover one date and need `leave_half`.
@@ -100,10 +106,7 @@ Combination rules (`RequestBase.check_combination`, mirrored in `frontend/src/li
 - An optional holiday is a one-date `FULL_LEAVE` with `leave_category: OPTIONAL_HOLIDAY` and the holiday's `holiday_id`.
 - Every request starts PENDING (WFH too).
 
-Only HR decides for now (`decided_by_id` is always HR). Pending and rejected requests show in history as `AWAITING_APPROVAL` / `REJECTED`.
-
-Not built yet:
-- `GET /api/requests/me` (my requests, newest first)
+Who decides: an EMPLOYEE's `reports_to` manager; HR for managers, HR staff and employees without a manager; HR may also override for any employee. Nobody decides their own request. Show the Approvals screen to MANAGER and HR. Pending and rejected requests show in history as `AWAITING_APPROVAL` / `REJECTED`.
 
 ## Holidays
 
@@ -111,7 +114,7 @@ Not built yet:
 |---|---|---|---|---|
 | GET | `/api/holidays` | any | none | `200 Holiday[]`, active holidays only, sorted by date (no year filter yet) |
 | POST | `/api/holidays` | HR | `{ "name", "holiday_date", "is_optional" }` (`is_optional` defaults to false) | `201 Holiday`. `409` "A holiday already exists on this date" (an active one). Adding a date whose holiday was removed restores that row with the new name and `is_optional` |
-| PATCH | `/api/holidays/{id}` | HR | `{ "is_active": false }` removes, `{ "is_active": true }` restores (required) | `200 Holiday`. `404` "Holiday not found" |
+| PATCH | `/api/holidays/{id}` | HR | `{ "is_active": false }` removes, `{ "is_active": true }` restores (required) | `200 Holiday`. `404` "Holiday not found". The HR Holidays page removes upcoming holidays (with Undo); past ones stay read-only |
 
 Optional holidays are working days; an employee takes one with a FULL_LEAVE request, `leave_category: "OPTIONAL_HOLIDAY"` and its `holiday_id`.
 
@@ -121,23 +124,25 @@ Removing is a soft delete: the row stays so optional-holiday requests keep a val
 
 | Method | Path | Who | Body | Response |
 |---|---|---|---|---|
-| GET | `/api/employees` | HR | none | `200` list sorted by name, active and inactive. Currently `name`, `email`, `role`, `reports_to_id`, `is_active` only, **without `id`** (to be switched to `Employee`) |
-| POST | `/api/employees` | HR | `{ "name", "email", "role", "reports_to_id", "is_active", "password" }`. `password` is the temporary password (8+ characters) | `201 Employee` with `must_change_password: true`. `409` duplicate email, `422` "reports_to_id must be an active employee" |
-| PATCH | `/api/employees/{id}` | HR | `{ "is_active": false }` deactivates, `{ "is_active": true }` restores (required) | `200 Employee`. `404` "Employee not found", `409` "You cannot deactivate your own account." |
+| GET | `/api/employees` | HR | none | `200 Employee[]` sorted by name, active and inactive. Each item has `id` (needed for `PATCH /api/employees/{id}`) |
+| POST | `/api/employees` | HR | `{ "name", "email", "role", "reports_to_id", "is_active", "password" }`. `password` is the temporary password (8+ characters) | `201 Employee` with `must_change_password: true`. `409` duplicate email, `422` "reports_to_id must be an active manager" (`reports_to_id` must be an active MANAGER, or null) |
+| PATCH | `/api/employees/{id}` | HR | Partial: send only what changes. `{ "is_active": false }` deactivates, `{ "is_active": true }` restores, `{ "reports_to_id": "<manager id>" }` changes the manager, `{ "reports_to_id": null }` removes it. Both keys may be sent together; an empty body or `"is_active": null` is `422` | `200 Employee`. `404` "Employee not found"; `422` "reports_to_id must be an active manager", "An employee cannot report to themselves or to someone in their own team."; `409` "You cannot deactivate your own account.", "Assign {name}'s team to another manager first." (a manager with active direct reports). HR People has Deactivate (with a confirm) and Reactivate on each row except your own, and Change manager on employee rows |
 
 Deactivation is a soft delete: the row and its attendance history stay. The employee's session stops working on their next request (`401`), and logging in returns `403`.
 
 When HR adds an employee, the frontend generates the temporary password (no look-alike characters) and shows it once for HR to share privately.
 
+`reports_to_id` decides approvals: an EMPLOYEE's requests go to that manager (see Requests).
+
 Not built yet:
-- Editing `name`, `role`, `reports_to_id` (could extend the same `PATCH`)
+- Editing `name` and `role` (could extend the same `PATCH`)
 
 ## Dashboard (HR)
 
 | Method | Path | Who | Query | Response |
 |---|---|---|---|---|
 | GET | `/api/dashboard/today` | HR | `day=YYYY-MM-DD` optional, default today in Pune; future dates are `422` | `200 DaySummary` |
-| GET | `/api/dashboard/today/team` | HR | same | `200 TeamMemberDay[]`, one per active employee who had joined by `day`, sorted by name |
+| GET | `/api/dashboard/today/team` | HR | same | `200 TeamMemberDay[]`, one per active employee who had joined by `day`, sorted by name. The HR attendance sheet (`/hr/sheet`) calls it once per weekday, up to today |
 
 - A future `day` is `422` "day cannot be in the future".
 - Every employee is in exactly one bucket, so `in_office + wfh + hybrid + on_leave + half_day_leave + not_checked_in == team_size`; `late` is a subset of the checked-in people.

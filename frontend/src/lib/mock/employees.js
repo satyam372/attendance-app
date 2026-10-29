@@ -4,7 +4,7 @@ import { currentEmployee } from "./auth.js";
 import { delay, getDb, publicEmployee, saveDb } from "./db.js";
 import { uuid } from "./uuid.js";
 
-// Mock of /api/employees (HR only) and POST /api/holidays (HR only). Mirrors backend
+// Mock of /api/employees (HR only) and POST/PATCH /api/holidays (HR only). Mirrors backend
 // routes/employees.py, services/employee.py and routes/holidays.py.
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -14,13 +14,11 @@ function requireHr() {
   if (user.role !== Role.HR) throw new ApiError(403, "You do not have permission to do this");
 }
 
-/** GET /employees → EmployeeBase[] (no id, no password), sorted by name. */
+/** GET /employees → EmployeePublic[] (with id, no password), sorted by name. */
 export async function listEmployees() {
   await delay(300);
   requireHr();
-  return [...getDb().employees]
-    .sort((a, b) => a.name.localeCompare(b.name))
-    .map(({ name, email, role, reports_to_id, is_active }) => ({ name, email, role, reports_to_id, is_active }));
+  return [...getDb().employees].sort((a, b) => a.name.localeCompare(b.name)).map(publicEmployee);
 }
 
 /** POST /employees with EmployeeCreate → 201 EmployeePublic (must_change_password true). */
@@ -35,13 +33,15 @@ export async function createEmployee(body) {
   if (new TextEncoder().encode(body.password).length > 72) throw new ApiError(422, "Password must be at most 72 bytes");
   const db = getDb();
   if (db.employees.some((e) => e.email === email)) throw new ApiError(409, "An employee with this email already exists");
+  const role = body.role ?? Role.EMPLOYEE;
+  const reportsTo = checkManager(db, body.reports_to_id ?? null);
 
   const employee = {
     id: uuid(),
     name,
     email,
-    role: body.role ?? Role.EMPLOYEE,
-    reports_to_id: null,
+    role,
+    reports_to_id: reportsTo,
     is_active: body.is_active ?? true,
     must_change_password: true,
     created_at: new Date().toISOString(),
@@ -59,9 +59,59 @@ export async function createHoliday(body) {
   const name = body.name?.trim() ?? "";
   if (!name || name.length > 100) throw new ApiError(422, "String should have at least 1 character");
   const db = getDb();
-  if (db.holidays.some((h) => h.holiday_date === body.holiday_date)) throw new ApiError(409, "A holiday already exists on this date");
-  const holiday = { id: uuid(), name, holiday_date: body.holiday_date, is_optional: Boolean(body.is_optional) };
-  db.holidays.push(holiday);
+  const existing = db.holidays.find((h) => h.holiday_date === body.holiday_date);
+  if (existing && existing.is_active !== false) throw new ApiError(409, "A holiday already exists on this date");
+  // holiday_date is unique, so a removed holiday on this date is restored with the new details
+  const holiday = existing ?? { id: uuid() };
+  Object.assign(holiday, { name, holiday_date: body.holiday_date, is_optional: Boolean(body.is_optional), is_active: true });
+  if (!existing) db.holidays.push(holiday);
   saveDb();
   return holiday;
+}
+
+/** PATCH /holidays/{id} with { is_active } → HolidayPublic. false removes the holiday, true restores it. */
+export async function setHolidayActive(id, isActive) {
+  await delay(400);
+  requireHr();
+  const holiday = getDb().holidays.find((h) => h.id === id);
+  if (!holiday) throw new ApiError(404, "Holiday not found");
+  holiday.is_active = isActive;
+  saveDb();
+  return { ...holiday };
+}
+
+/**
+ * reports_to rules, as backend services/employee._check_manager: an active MANAGER, or null
+ * (then HR decides their requests); never themselves or someone in their own team.
+ */
+function checkManager(db, reportsToId, selfId = null) {
+  if (!reportsToId) return null; // allowed (HR then decides); the add form still asks for one
+  const manager = db.employees.find((e) => e.id === reportsToId);
+  if (!manager || !manager.is_active || manager.role !== Role.MANAGER) throw new ApiError(422, "reports_to_id must be an active manager");
+  // Self-reference or a loop (A -> B -> A), like backend _reports_to_chain
+  for (let id = reportsToId, seen = new Set(); id && !seen.has(id); id = db.employees.find((e) => e.id === id)?.reports_to_id) {
+    if (id === selfId) throw new ApiError(422, "An employee cannot report to themselves or to someone in their own team.");
+    seen.add(id);
+  }
+  return reportsToId;
+}
+
+/** PATCH /employees/{id} with { is_active?, reports_to_id? }: soft delete/restore, or change the manager. */
+export async function updateEmployee(id, changes) {
+  await delay(400);
+  requireHr();
+  const db = getDb();
+  const employee = db.employees.find((e) => e.id === id);
+  if (!employee) throw new ApiError(404, "Employee not found");
+  if ("reports_to_id" in changes) employee.reports_to_id = checkManager(db, changes.reports_to_id, employee.id);
+  if (changes.is_active === false) {
+    if (employee.id === currentEmployee().id) throw new ApiError(409, "You cannot deactivate your own account.");
+    // Their reports would be left with nobody to approve their requests
+    if (db.employees.some((e) => e.reports_to_id === employee.id && e.is_active)) {
+      throw new ApiError(409, `Assign ${employee.name}'s team to another manager first.`);
+    }
+  }
+  if ("is_active" in changes) employee.is_active = changes.is_active;
+  saveDb();
+  return publicEmployee(employee);
 }

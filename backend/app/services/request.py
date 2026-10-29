@@ -12,7 +12,7 @@ from sqlmodel import Session, select
 from app.models.attendance import Attendance
 from app.models.enums import ApprovalStatus, LeavePortion, RequestType, Role, WorkMode
 from app.models.holiday import Holiday
-from app.models.request import Request, RequestCreate
+from app.models.request import Request, RequestCreate, RequestPublic
 from app.models.user import Employee
 from app.schemas.request import RequestWithEmployee
 from app.services.holiday import working_days_between
@@ -39,7 +39,7 @@ class RequestNotFoundError(RequestError):
 
 
 class NotAllowedToDecideError(RequestError):
-    """Only HR employees may approve or reject (decided_by_id is always HR)."""
+    """The decider is not the requester's manager (or HR), or it is their own request."""
 
 
 class AlreadyDecidedError(RequestError):
@@ -86,21 +86,79 @@ def list_requests(
     session: Session, decider: Employee, statuses: list[ApprovalStatus] | None = None
 ) -> list[RequestWithEmployee]:
     """Newest first. [PENDING] is "Waiting for you"; [APPROVED, REJECTED] is "Decided";
-    None or [] means every status. HR sees every request; a manager sees only their
-    direct reports' requests."""
+    None or [] means every status. HR sees every request; a manager sees only requests from
+    EMPLOYEEs who report to them (the ones they may decide). Nobody sees their own requests
+    here, because nobody decides their own (they are in GET /api/requests/me)."""
     query = (
-        select(Request, Employee.name)
+        select(Request)
         .join(Employee, Request.employee_id == Employee.id)
         .order_by(Request.created_at.desc())
     )
+    query = query.where(Request.employee_id != decider.id)
     if decider.role != Role.HR:
-        query = query.where(Employee.reports_to_id == decider.id)
+        query = query.where(Employee.reports_to_id == decider.id, Employee.role == Role.EMPLOYEE)
     if statuses:
         query = query.where(Request.status.in_(statuses))
+    requests = list(session.exec(query).all())
+    people = _people(session, requests)
     return [
-        RequestWithEmployee.model_validate(request, update={"employee_name": name})
-        for request, name in session.exec(query).all()
+        RequestWithEmployee.model_validate(
+            request,
+            update={**_names(request, people), "employee_name": people[request.employee_id].name},
+        )
+        for request in requests
     ]
+
+
+def list_my_requests(session: Session, employee: Employee) -> list[RequestPublic]:
+    """The employee's own requests, every status, newest first."""
+    query = (
+        select(Request)
+        .where(Request.employee_id == employee.id)
+        .order_by(Request.created_at.desc())
+    )
+    return to_public(session, list(session.exec(query).all()))
+
+
+def _people(session: Session, requests: list[Request]) -> dict[uuid.UUID, Employee]:
+    """Everyone a list of requests mentions (requesters, deciders, requesters' managers), loaded
+    in at most two queries instead of one per request."""
+    ids = {r.employee_id for r in requests} | {r.decided_by_id for r in requests if r.decided_by_id}
+    people = {e.id: e for e in session.exec(select(Employee).where(Employee.id.in_(ids))).all()}
+    manager_ids = {e.reports_to_id for e in people.values() if e.reports_to_id} - people.keys()
+    if manager_ids:
+        managers = session.exec(select(Employee).where(Employee.id.in_(manager_ids))).all()
+        people |= {e.id: e for e in managers}
+    return people
+
+
+def approver_name(requester: Employee, manager: Employee | None) -> str:
+    """Who decides this person's requests, by the same rule as can_decide(): an EMPLOYEE's
+    active manager, otherwise HR (managers, HR staff, employees without a manager)."""
+    if (
+        requester.role == Role.EMPLOYEE
+        and manager is not None
+        and manager.is_active
+        and manager.role == Role.MANAGER
+    ):
+        return manager.name
+    return "HR"
+
+
+def _names(request: Request, people: dict[uuid.UUID, Employee]) -> dict[str, str | None]:
+    requester = people[request.employee_id]
+    manager = people.get(requester.reports_to_id) if requester.reports_to_id else None
+    decider = people.get(request.decided_by_id) if request.decided_by_id else None
+    return {
+        "approver_name": approver_name(requester, manager),
+        "decided_by_name": decider.name if decider else None,
+    }
+
+
+def to_public(session: Session, requests: list[Request]) -> list[RequestPublic]:
+    """Response shape with approver_name and decided_by_name filled in."""
+    people = _people(session, requests)
+    return [RequestPublic.model_validate(r, update=_names(r, people)) for r in requests]
 
 
 def _attendance_values(request: Request) -> dict:
@@ -153,6 +211,26 @@ def _apply_to_attendance(session: Session, request: Request) -> None:
         session.add(row)
 
 
+def can_decide(decider: Employee, requester: Employee) -> bool:
+    """Who may approve or reject a request. A foreign key cannot check roles or the reporting
+    line, so this is the only place the rule is enforced (the route only lets HR and managers in).
+
+    - Nobody decides their own request, HR included.
+    - HR decides everyone's: the normal path for managers' and HR staff's requests, and an
+      override for employees' requests.
+    - A manager decides only for EMPLOYEEs who report to them; a manager's own request goes to HR.
+    """
+    if decider.id == requester.id:
+        return False
+    if decider.role == Role.HR:
+        return True
+    return (
+        decider.role == Role.MANAGER
+        and requester.role == Role.EMPLOYEE
+        and requester.reports_to_id == decider.id
+    )
+
+
 def decide_request(
     session: Session,
     request_id: uuid.UUID,
@@ -160,13 +238,11 @@ def decide_request(
     status: ApprovalStatus,
     now: datetime | None = None,
 ) -> Request:
-    # decided_by_id must always be an HR employee. A foreign key cannot check the referenced
-    # row's role, so the rule is enforced here (and by the HR-only route).
-    if decider.role != Role.HR:
-        raise NotAllowedToDecideError
     request = session.get(Request, request_id)
     if request is None:
         raise RequestNotFoundError
+    if not can_decide(decider, session.get(Employee, request.employee_id)):
+        raise NotAllowedToDecideError
     if request.status != ApprovalStatus.PENDING:
         raise AlreadyDecidedError
 

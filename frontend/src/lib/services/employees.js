@@ -3,13 +3,13 @@ import * as mock from "../mock/employees.js";
 
 // HR people and holiday management (backend routes/employees.py and routes/holidays.py).
 
-/** GET /employees (HR) → EmployeeBase[]: name, email, role, reports_to_id, is_active. No ids yet. */
+/** GET /employees (HR) → EmployeePublic[]: id, name, email, role, reports_to_id, is_active, must_change_password, created_at. */
 export function listEmployees() {
   if (USE_MOCK_API) return mock.listEmployees();
   return apiFetch("/employees");
 }
 
-/** POST /employees (HR) with { name, email, role, password } → 201 EmployeePublic. 409 if the email exists. */
+/** POST /employees (HR) with { name, email, role, reports_to_id, password } → 201 EmployeePublic. 409 if the email exists. */
 export function createEmployee(body) {
   if (USE_MOCK_API) return mock.createEmployee(body);
   return apiFetch("/employees", { method: "POST", body });
@@ -19,4 +19,19 @@ export function createEmployee(body) {
 export function createHoliday(body) {
   if (USE_MOCK_API) return mock.createHoliday(body);
   return apiFetch("/holidays", { method: "POST", body });
+}
+
+/** PATCH /holidays/{id} (HR) with { is_active } → HolidayPublic. false removes it (soft delete), true restores it. 404 if unknown. */
+export function setHolidayActive(id, isActive) {
+  if (USE_MOCK_API) return mock.setHolidayActive(id, isActive);
+  return apiFetch(`/holidays/${id}`, { method: "PATCH", body: { is_active: isActive } });
+}
+
+/**
+ * PATCH /employees/{id} (HR) with { is_active } and/or { reports_to_id } → EmployeePublic.
+ * 409 when deactivating yourself or a manager who still has a team, 422 for an invalid manager, 404 if unknown.
+ */
+export function updateEmployee(id, changes) {
+  if (USE_MOCK_API) return mock.updateEmployee(id, changes);
+  return apiFetch(`/employees/${id}`, { method: "PATCH", body: changes });
 }

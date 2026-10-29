@@ -18,3 +18,12 @@ export function me() {
   if (USE_MOCK_API) return mock.me();
   return apiFetch("/auth/me");
 }
+
+/** The signed-in user's own password; returns the updated Employee (must_change_password false). */
+export function changePassword(currentPassword, newPassword) {
+  if (USE_MOCK_API) return mock.changePassword(currentPassword, newPassword);
+  return apiFetch("/auth/change-password", {
+    method: "POST",
+    body: { current_password: currentPassword, new_password: newPassword },
+  });
+}

@@ -1,5 +1,5 @@
 import { ApiError } from "../api.js";
-import { delay, getDb, publicEmployee } from "./db.js";
+import { delay, getDb, publicEmployee, saveDb } from "./db.js";
 
 // Mock of /api/auth/*. The real backend keeps the session in an httpOnly cookie;
 // here the signed-in employee id is kept in localStorage.
@@ -49,4 +49,18 @@ export function currentEmployee() {
 export async function me() {
   await delay(200);
   return publicEmployee(currentEmployee());
+}
+
+/** POST /auth/change-password: same checks and messages as backend services/auth.change_password. */
+export async function changePassword(currentPassword, newPassword) {
+  await delay(500);
+  const user = currentEmployee();
+  if (!newPassword || newPassword.length < 8) throw new ApiError(422, "String should have at least 8 characters");
+  if (new TextEncoder().encode(newPassword).length > 72) throw new ApiError(422, "Password must be at most 72 bytes");
+  if (user.password !== currentPassword) throw new ApiError(400, "Current password is incorrect");
+  if (newPassword === currentPassword) throw new ApiError(400, "Choose a password different from the current one");
+  user.password = newPassword;
+  user.must_change_password = false;
+  saveDb();
+  return publicEmployee(user);
 }

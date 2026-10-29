@@ -57,7 +57,14 @@ export function AuthProvider({ children }) {
     }
   }, [queryClient]);
 
-  const value = useMemo(() => ({ ...state, login, logout }), [state, login, logout]);
+  // The session cookie stays valid, so only the user record changes (must_change_password becomes false).
+  const changePassword = useCallback(async (currentPassword, newPassword) => {
+    const user = await authService.changePassword(currentPassword, newPassword);
+    setState({ status: "authenticated", user });
+    return user;
+  }, []);
+
+  const value = useMemo(() => ({ ...state, login, logout, changePassword }), [state, login, logout, changePassword]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

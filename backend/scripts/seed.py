@@ -25,12 +25,13 @@ from app.services.holiday import create_holiday
 
 DOMAIN = "speedinnovations.in"
 
+# (name, email local part, role, manager's local part). Managers come before their reports.
 USERS = [
-    ("Test HR", "test.hr", Role.HR),
-    ("Test Manager", "test.manager", Role.MANAGER),
-    ("Test Employee One", "test.employee1", Role.EMPLOYEE),
-    ("Test Employee Two", "test.employee2", Role.EMPLOYEE),
-    ("Test Employee Three", "test.employee3", Role.EMPLOYEE),
+    ("Test HR", "test.hr", Role.HR, None),
+    ("Test Manager", "test.manager", Role.MANAGER, None),
+    ("Test Employee One", "test.employee1", Role.EMPLOYEE, "test.manager"),
+    ("Test Employee Two", "test.employee2", Role.EMPLOYEE, "test.manager"),
+    ("Test Employee Three", "test.employee3", Role.EMPLOYEE, "test.manager"),
 ]
 
 # Sample data for testing; HR can edit the real calendar from the Holidays tab
@@ -44,12 +45,29 @@ HOLIDAYS = [
 
 
 def seed_users(session: Session, password: str) -> None:
-    for name, local_part, role in USERS:
+    for name, local_part, role, manager_part in USERS:
         email = f"{local_part}@{DOMAIN}"
-        if session.exec(select(Employee.id).where(Employee.email == email)).first():
-            print(f"  skip   {email} (exists)")
+        manager_id = None
+        if manager_part is not None:
+            manager_email = f"{manager_part}@{DOMAIN}"
+            manager_id = session.exec(select(Employee.id).where(Employee.email == manager_email)).one()
+        existing = session.exec(select(Employee).where(Employee.email == email)).first()
+        if existing is not None:
+            # Older seeds created test employees without a manager; give them one
+            if existing.reports_to_id is None and manager_id is not None:
+                existing.reports_to_id = manager_id
+                session.add(existing)
+                session.commit()
+                print(f"  update {email} (reports to {manager_part})")
+            else:
+                print(f"  skip   {email} (exists)")
             continue
-        create_employee(session, EmployeeCreate(name=name, email=email, role=role, password=password))
+        create_employee(
+            session,
+            EmployeeCreate(
+                name=name, email=email, role=role, reports_to_id=manager_id, password=password
+            ),
+        )
         print(f"  added  {email} ({role})")
 
 

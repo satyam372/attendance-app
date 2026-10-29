@@ -72,12 +72,12 @@ attendance-app/
         ├── auth/AuthContext.jsx   # session: me / login / logout (clears the React Query cache)
         ├── theme/ThemeContext.jsx # system / light / dark preference
         ├── hooks/                 # useAttendance (React Query), useNow (live clock)
-        ├── components/            # AppLayout, ProtectedRoute, LoginIllustration, layout/ (Sidebar, BottomNav),
+        ├── components/            # AppLayout, ProtectedRoute, ChangePasswordForm, LoginIllustration, layout/ (Sidebar, BottomNav),
         │                          # home/ (CheckInCard, TodayTimes, HoursChart, MonthStats),
-        │                          # attendance/ (MonthCalendar, DayDetail, DailyLog), leave/ (LeaveForm, UpcomingHolidays),
+        │                          # attendance/ (MonthCalendar, DayDetail, DailyLog), leave/ (LeaveForm, MyRequests, UpcomingHolidays),
         │                          # hr/ (HrTabs, TeamMemberCard, RequestCard, AddEmployeeForm),
         │                          # ui/ (Button, TextField, Fields: SelectField, DateField, TextAreaField, Segmented, ...)
-        └── pages/                 # Login, EmployeeHome, Attendance, Leave, Profile, HrToday (/hr), HrApprovals (/hr/approvals), HrTeam (/hr/team), HrHolidays (/hr/holidays), NotFound
+        └── pages/                 # Login, ChangePassword (/change-password, forced while must_change_password), EmployeeHome, Attendance, Leave, Profile, HrToday (/hr), HrSheet (/hr/sheet), HrApprovals (/hr/approvals), HrTeam (/hr/team), HrHolidays (/hr/holidays), NotFound
 ```
 
 Frontend commands (in `frontend/`): `npm run dev` (port 1234), `npm run build`, `npm test` (domain rules). Server data goes through React Query hooks in `src/hooks/`; navigation is a sidebar on PC (lg+) and a bottom tab bar on phones. Styling is **Tailwind only**: use the tokens in `styles.css` (`bg-surface`, `text-ink`, `text-accent-ink`, ...), not raw hex values.
@@ -117,8 +117,8 @@ Design decisions:
 - Weekends and holidays are skipped in leave/WFH date ranges.
 - Request status is **never stored in attendance**. Pending/rejected days in history are derived from the `request` table ("Awaiting approval", "Rejected"); attendance rows exist only once a request is APPROVED (or the employee checks in).
 - On approval, the backend creates or updates one attendance row per working day in the range and sets `request_id`. If a day already has a row: half-day leave and WFH update the leave/work-mode fields and keep `in_time`; full leave is rejected if the employee already checked in that day.
-- HR decides with APPROVED or REJECTED only; no decision comment. `decided_by_id` and `decided_at` are set by the server.
-- Approval routing (for now): **only HR** lists and decides requests, so `decided_by_id` is always an HR employee. Enforced in the app (HR-only routes + a role check in `decide_request`), because a foreign key cannot check the referenced employee's role. Later: let a `reports_to` manager decide for their direct reports.
+- The decider (manager or HR) answers APPROVED or REJECTED only; no decision comment. `decided_by_id` and `decided_at` are set by the server.
+- Approval routing: an EMPLOYEE's requests are decided by their `reports_to` manager; managers' and HR staff's requests (and employees without a manager) by HR. HR can also decide any employee's request (override). **Nobody decides their own request**, HR included. Enforced in the app (`can_decide()` in `services/request.py`; the routes let only MANAGER and HR in), because a foreign key cannot check roles or the reporting line. The approvals list shows a manager only the requests they may decide, and nobody their own. The frontend mirrors the rule in `lib/domain/approvals.js` (which screen shows which request, and HR's override step).
 - Role checks must be enforced **in the backend** on every route, not only by hiding UI.
 - Managers and HR are also employees (they check in, request leave, etc.). Navigation is layered: employee screens for everyone, + team screens for MANAGER, + everything for HR.
 

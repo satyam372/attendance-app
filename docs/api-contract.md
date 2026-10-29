@@ -120,15 +120,17 @@ Removing is a soft delete: the row stays so optional-holiday requests keep a val
 | Method | Path | Who | Body | Response |
 |---|---|---|---|---|
 | GET | `/api/employees` | HR | none | `200 Employee[]` sorted by name, active and inactive. Each item has `id` (needed for `PATCH /api/employees/{id}`) |
-| POST | `/api/employees` | HR | `{ "name", "email", "role", "reports_to_id", "is_active", "password" }`. `password` is the temporary password (8+ characters) | `201 Employee` with `must_change_password: true`. `409` duplicate email, `422` "reports_to_id must be an active employee" |
-| PATCH | `/api/employees/{id}` | HR | `{ "is_active": false }` deactivates, `{ "is_active": true }` restores (required) | `200 Employee`. `404` "Employee not found", `409` "You cannot deactivate your own account.". HR People has Deactivate (with a confirm) and Reactivate on each row except your own |
+| POST | `/api/employees` | HR | `{ "name", "email", "role", "reports_to_id", "is_active", "password" }`. `password` is the temporary password (8+ characters) | `201 Employee` with `must_change_password: true`. `409` duplicate email, `422` "reports_to_id must be an active manager" (`reports_to_id` must be an active MANAGER, or null) |
+| PATCH | `/api/employees/{id}` | HR | Partial: send only what changes. `{ "is_active": false }` deactivates, `{ "is_active": true }` restores, `{ "reports_to_id": "<manager id>" }` changes the manager, `{ "reports_to_id": null }` removes it. Both keys may be sent together; an empty body or `"is_active": null` is `422` | `200 Employee`. `404` "Employee not found"; `422` "reports_to_id must be an active manager", "An employee cannot report to themselves or to someone in their own team."; `409` "You cannot deactivate your own account.", "Assign {name}'s team to another manager first." (a manager with active direct reports). HR People has Deactivate (with a confirm) and Reactivate on each row except your own |
 
 Deactivation is a soft delete: the row and its attendance history stay. The employee's session stops working on their next request (`401`), and logging in returns `403`.
 
 When HR adds an employee, the frontend generates the temporary password (no look-alike characters) and shows it once for HR to share privately.
 
+`reports_to_id` decides approvals: an EMPLOYEE's requests go to that manager (see Requests).
+
 Not built yet:
-- Editing `name`, `role`, `reports_to_id` (could extend the same `PATCH`)
+- Editing `name` and `role` (could extend the same `PATCH`)
 
 ## Dashboard (HR)
 

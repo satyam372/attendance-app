@@ -1,4 +1,4 @@
-import { CalendarDays, FileText, House, UserRound, UsersRound } from "lucide-react";
+import { CalendarDays, ClipboardCheck, FileText, House, UserRound, UsersRound } from "lucide-react";
 
 import { Role } from "../../lib/domain/enums.js";
 
@@ -8,6 +8,8 @@ export const NAV_ITEMS = [
   { to: "/", label: "Home", icon: House, end: true },
   { to: "/attendance", label: "Attendance", icon: CalendarDays },
   { to: "/leave", label: "Leave", icon: FileText },
+  // Managers approve their direct reports' leave and WFH requests
+  { to: "/approvals", label: "Approvals", icon: ClipboardCheck, roles: [Role.MANAGER] },
   { to: "/hr", label: "Team", icon: UsersRound, roles: [Role.HR] },
 ];
 

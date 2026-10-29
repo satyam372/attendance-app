@@ -45,7 +45,9 @@ function MyRequestItem({ request, closedHolidays }) {
       {request.reason && <p className="m-0 text-sm text-ink-muted">&ldquo;{request.reason}&rdquo;</p>}
       <p className="m-0 text-xs text-ink-muted">
         Applied {shortDate(toDateKey(request.created_at))}
+        {request.status === "PENDING" && request.approver_name && ` · waiting for ${request.approver_name}`}
         {request.decided_at && ` · ${request.status === "APPROVED" ? "approved" : "rejected"} ${shortDate(toDateKey(request.decided_at))}`}
+        {request.decided_by_name && ` by ${request.decided_by_name}`}
       </p>
     </li>
   );
@@ -71,7 +73,7 @@ export function MyRequests() {
   const closedHolidays = new Set((holidays.data ?? []).filter((h) => !h.is_optional).map((h) => h.holiday_date));
 
   return (
-    <section aria-labelledby="my-requests-heading" className="flex flex-col gap-3 rounded-3xl border border-line bg-surface p-5">
+    <section aria-labelledby="my-requests-heading" className="flex flex-col gap-3 rounded-3xl surface-card p-5">
       <h2 id="my-requests-heading" className="m-0 text-base font-bold">
         My requests
       </h2>

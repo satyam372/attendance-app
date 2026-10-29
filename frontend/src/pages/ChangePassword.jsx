@@ -29,7 +29,7 @@ export default function ChangePassword() {
 
       <section
         aria-labelledby="change-password-heading"
-        className="flex w-full max-w-[440px] flex-col gap-6 rounded-sheet border border-line bg-surface px-6 pt-7 pb-8 shadow-[0_30px_80px_rgb(46_29_92/0.14)] sm:px-9 sm:pt-8 sm:pb-9 dark:shadow-[0_30px_80px_rgb(0_0_0/0.45)]"
+        className="flex w-full max-w-[440px] flex-col gap-6 rounded-sheet surface-sheet px-6 pt-7 pb-8 shadow-[0_30px_80px_rgb(46_29_92/0.14)] sm:px-9 sm:pt-8 sm:pb-9 dark:shadow-[0_30px_80px_rgb(0_0_0/0.45)]"
       >
         <div className="flex flex-col gap-1.5">
           <h1 id="change-password-heading" className="m-0 text-[26px] leading-[1.15] font-semibold tracking-[-0.02em] sm:text-[30px]">

@@ -50,7 +50,7 @@ export function HoursChart({ range = "week", todayKey, attendance, now, classNam
   });
 
   return (
-    <section aria-labelledby={headingId} className={clsx("flex flex-col gap-3.5 rounded-[22px] border border-line bg-surface p-4.5 lg:p-5.5", className)}>
+    <section aria-labelledby={headingId} className={clsx("flex flex-col gap-3.5 rounded-[22px] surface-card p-4.5 lg:p-5.5", className)}>
       <div className="flex items-baseline justify-between">
         <h2 id={headingId} className="m-0 text-[15px] font-bold lg:text-base">
           {title}

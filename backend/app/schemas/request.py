@@ -1,6 +1,7 @@
 """Request shapes that are not built from RequestBase.
 (RequestCreate and RequestPublic live next to the table in models/request.py.)"""
 
+from datetime import datetime
 from typing import Literal
 
 from sqlmodel import SQLModel
@@ -13,6 +14,8 @@ class RequestWithEmployee(RequestPublic):
     """HR/manager list: the request plus who raised it ("Snehal Avhad, Fri 9 Oct")."""
 
     employee_name: str
+    # The requester's photo (the request's own id is not theirs: use employee_id for the URL)
+    photo_updated_at: datetime | None = None
 
 
 class RequestDecision(SQLModel):

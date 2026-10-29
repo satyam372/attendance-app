@@ -7,6 +7,7 @@ GitHub renders the diagram below automatically.
 ```mermaid
 erDiagram
   EMPLOYEE |o--o{ EMPLOYEE : "reports to"
+  EMPLOYEE ||--o| EMPLOYEE_PHOTO : "has"
   EMPLOYEE ||--o{ ATTENDANCE : "has"
   EMPLOYEE ||--o{ REQUEST : "raises"
   EMPLOYEE |o--o{ REQUEST : "decides"
@@ -22,7 +23,14 @@ erDiagram
     uuid reports_to_id FK "nullable"
     bool is_active
     bool must_change_password
+    datetime photo_updated_at "nullable"
     datetime created_at
+    datetime updated_at
+  }
+  EMPLOYEE_PHOTO {
+    uuid employee_id PK, FK
+    string content_type
+    bytes data
     datetime updated_at
   }
   ATTENDANCE {
@@ -78,8 +86,20 @@ erDiagram
 | reports_to_id | uuid → employee.id | nullable; empty until managers exist |
 | is_active | bool | default true; inactive users cannot sign in |
 | must_change_password | bool | true after HR creates the account |
+| photo_updated_at | datetime (UTC) | nullable; when the profile photo last changed, null without one. Goes in the photo URL (`?v=`) so a new photo is fetched at once |
 | created_at | datetime (UTC) | set on insert (database default) |
 | updated_at | datetime (UTC) | set on insert and on every ORM update |
+
+### employee_photo
+
+The profile photo, at most one per employee. The browser crops and resizes it to 256×256 WebP/JPEG before uploading, so it is a few KB. A separate table so loading an employee never reads the image.
+
+| Field | Type | Rules |
+|---|---|---|
+| employee_id | uuid → employee.id | primary key; deleted with the employee (ON DELETE CASCADE) |
+| content_type | string | image/webp, image/jpeg or image/png, taken from the file's first bytes |
+| data | bytea | the image, at most 200 KB |
+| updated_at | datetime (UTC) | same value as employee.photo_updated_at |
 
 ### attendance
 

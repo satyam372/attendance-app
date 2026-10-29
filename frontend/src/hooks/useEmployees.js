@@ -2,8 +2,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import * as employees from "../lib/services/employees.js";
 
-export function useEmployees() {
-  return useQuery({ queryKey: ["employees"], queryFn: employees.listEmployees });
+/** HR only: everyone, with role and reports_to (also used to route approvals). */
+export function useEmployees({ enabled = true } = {}) {
+  return useQuery({ queryKey: ["employees"], queryFn: employees.listEmployees, enabled });
 }
 
 /** Add an employee; the team list and the HR dashboard (team size) refresh. */
@@ -43,14 +44,15 @@ export function useSetHolidayActive() {
   });
 }
 
-/** Deactivate ({ id, isActive: false }) or reactivate an employee; the team list and HR dashboard refresh. */
-export function useSetEmployeeActive() {
+/** Change an employee: useUpdateEmployee().mutate({ id, changes: { is_active } or { reports_to_id } }). */
+export function useUpdateEmployee() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, isActive }) => employees.setEmployeeActive(id, isActive),
+    mutationFn: ({ id, changes }) => employees.updateEmployee(id, changes),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["employees"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["requests"] }); // who approves pending requests may change
     },
   });
 }

@@ -1,4 +1,5 @@
-import { CalendarDays, Check, X } from "lucide-react";
+import { CalendarDays, Check, Hourglass, X } from "lucide-react";
+import { useState } from "react";
 
 import { useDecideRequest } from "../../hooks/useRequests.js";
 import { CATEGORY_LABELS, HALF_LABELS, REQUEST_TYPE_LABELS, requestDays } from "../../lib/domain/requests.js";
@@ -42,15 +43,22 @@ function appliedText(createdAt) {
   return `Applied on ${new Date(Date.UTC(y, m - 1, d)).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "UTC" })}`;
 }
 
-/** A pending request with Approve / Reject (HR Approvals). */
-export function PendingRequestCard({ request, closedHolidays }) {
+/**
+ * A pending request. `mode`:
+ * - "decide": you are the approver (the manager, or HR for managers' and HR's requests): Approve / Reject
+ * - "override": HR viewing an employee's request that their manager (`approverName`) decides; HR can
+ *   still step in after a second click, and the decision is recorded as HR's
+ * - "own": your own request, which someone else decides; no buttons
+ */
+export function PendingRequestCard({ request, closedHolidays, mode = "decide", approverName }) {
   const decide = useDecideRequest();
+  const [overriding, setOverriding] = useState(false);
   const days = requestDays(request, closedHolidays);
   const appliedLate = toDateKey(request.created_at) >= request.from_date; // "apply 1 day in advance" (not enforced)
   const choice = decide.variables?.status;
 
   return (
-    <li className="flex flex-col gap-3.5 rounded-[20px] border border-line bg-surface p-4 sm:p-5">
+    <li className="flex flex-col gap-3.5 rounded-[20px] surface-card p-4 sm:p-5">
       <div className="flex items-start gap-3">
         <Avatar name={request.employee_name} className="size-10 text-[13px]" />
         <div className="min-w-0 flex-1">
@@ -70,37 +78,56 @@ export function PendingRequestCard({ request, closedHolidays }) {
         <span className="font-semibold text-ink">{requestDates(request)}</span>
         <span>· {fmtDays(days)} {days === 1 ? "working day" : "working days"}</span>
       </p>
-      {request.reason && <p className="m-0 rounded-xl bg-field px-3.5 py-2.5 text-sm text-ink-soft">&ldquo;{request.reason}&rdquo;</p>}
+      {request.reason && <p className="m-0 rounded-xl surface-inset px-3.5 py-2.5 text-sm text-ink-soft">&ldquo;{request.reason}&rdquo;</p>}
       <p className="m-0 text-xs text-ink-muted">
         {appliedText(request.created_at)}
         {appliedLate && " · less than a day in advance"}
       </p>
 
       <ErrorAlert>{decide.error?.message}</ErrorAlert>
+      {mode === "own" && <p className="m-0 rounded-xl surface-inset px-3.5 py-2.5 text-sm text-ink-soft">Your own request: another HR person decides it.</p>}
+      {mode === "override" && (
+        <p className="m-0 flex items-center gap-2 text-sm font-semibold text-ink-soft">
+          <Hourglass className="size-4 text-pending" aria-hidden="true" />
+          Waiting for {approverName}
+        </p>
+      )}
+      {mode === "override" && !overriding && (
+        <Button variant="ghost" onClick={() => setOverriding(true)} className="self-start">
+          Decide as HR…
+        </Button>
+      )}
+      {mode === "override" && overriding && (
+        <p className="m-0 rounded-xl surface-inset px-3.5 py-2.5 text-sm text-ink-soft">
+          Normally {approverName} decides. Your decision is recorded as an HR override.
+        </p>
+      )}
 
-      <div className="flex gap-2.5">
-        <Button
-          variant="danger"
-          className="flex-1"
-          loading={decide.isPending && choice === "REJECTED"}
-          disabled={decide.isPending}
-          onClick={() => decide.mutate({ id: request.id, status: "REJECTED" })}
-          aria-label={`Reject ${request.employee_name}'s request for ${requestDates(request)}`}
-        >
-          {!(decide.isPending && choice === "REJECTED") && <X className="size-4" aria-hidden="true" />}
-          Reject
-        </Button>
-        <Button
-          className="flex-1"
-          loading={decide.isPending && choice === "APPROVED"}
-          disabled={decide.isPending}
-          onClick={() => decide.mutate({ id: request.id, status: "APPROVED" })}
-          aria-label={`Approve ${request.employee_name}'s request for ${requestDates(request)}`}
-        >
-          {!(decide.isPending && choice === "APPROVED") && <Check className="size-4" aria-hidden="true" />}
-          Approve
-        </Button>
-      </div>
+      {(mode === "decide" || overriding) && (
+        <div className="flex gap-2.5">
+          <Button
+            variant="danger"
+            className="flex-1"
+            loading={decide.isPending && choice === "REJECTED"}
+            disabled={decide.isPending}
+            onClick={() => decide.mutate({ id: request.id, status: "REJECTED" })}
+            aria-label={`Reject ${request.employee_name}'s request for ${requestDates(request)}`}
+          >
+            {!(decide.isPending && choice === "REJECTED") && <X className="size-4" aria-hidden="true" />}
+            Reject
+          </Button>
+          <Button
+            className="flex-1"
+            loading={decide.isPending && choice === "APPROVED"}
+            disabled={decide.isPending}
+            onClick={() => decide.mutate({ id: request.id, status: "APPROVED" })}
+            aria-label={`Approve ${request.employee_name}'s request for ${requestDates(request)}`}
+          >
+            {!(decide.isPending && choice === "APPROVED") && <Check className="size-4" aria-hidden="true" />}
+            Approve
+          </Button>
+        </div>
+      )}
     </li>
   );
 }
@@ -118,6 +145,7 @@ export function DecidedRequestRow({ request }) {
         <p className="m-0 truncate text-xs text-ink-muted">
           {requestDates(request)}
           {request.decided_at ? ` · decided ${shortDate(toDateKey(request.decided_at))}, ${formatTime(request.decided_at)}` : ""}
+          {request.decided_by_name ? ` by ${request.decided_by_name}` : ""}
         </p>
       </div>
       <StatusChip category={approved ? Category.PRESENT : Category.ABSENT} className="shrink-0">

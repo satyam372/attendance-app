@@ -92,7 +92,8 @@ export function LeaveForm() {
         <CircleCheck className="size-12 text-success" strokeWidth={1.6} aria-hidden="true" />
         <h3 className="m-0 text-lg font-bold">Request sent</h3>
         <p className="m-0 max-w-sm text-sm text-ink-soft">
-          {what} · {dates} · {dayWord(sent.days)}. It&rsquo;s waiting for HR to approve.
+          {what} · {dates} · {dayWord(sent.days)}. It&rsquo;s waiting for {sent.request.approver_name ?? "approval"}
+          {sent.request.approver_name && sent.request.approver_name !== "HR" ? " (your manager)" : ""}.
         </p>
         <p className="m-0 max-w-sm text-xs text-ink-muted">
           Until approved, the days show as &ldquo;Awaiting approval&rdquo; on your{" "}
@@ -187,7 +188,7 @@ export function LeaveForm() {
         </div>
       )}
 
-      <p className="m-0 rounded-xl bg-field px-3.5 py-2.5 text-[13px] text-ink-soft" aria-live="polite">
+      <p className="m-0 rounded-xl surface-inset px-3.5 py-2.5 text-[13px] text-ink-soft" aria-live="polite">
         {isOptionalHoliday
           ? "One day off on the holiday you choose."
           : days > 0

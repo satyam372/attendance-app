@@ -20,7 +20,7 @@ export function MonthSwitcher({ value, onChange, canGoNext, variant = "inline", 
     <div
       className={clsx(
         "flex items-center justify-between gap-1",
-        variant === "boxed" && "rounded-xl border border-line bg-surface px-1",
+        variant === "boxed" && "rounded-xl surface-control px-1",
         className,
       )}
     >

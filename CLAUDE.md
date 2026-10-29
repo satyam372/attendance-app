@@ -81,7 +81,7 @@ attendance-app/
         └── pages/                 # Login, ChangePassword (/change-password, forced while must_change_password), EmployeeHome, Attendance, Leave, Profile, HrToday (/hr), HrSheet (/hr/sheet), HrApprovals (/hr/approvals), HrTeam (/hr/team), HrHolidays (/hr/holidays), NotFound
 ```
 
-Frontend commands (in `frontend/`): `npm run dev` (port 1234), `npm run build`, `npm test` (domain rules). Server data goes through React Query hooks in `src/hooks/`; navigation is a sidebar on PC (lg+) and a bottom tab bar on phones. Styling is **Tailwind only**: use the tokens in `styles.css` (`bg-surface`, `text-ink`, `text-accent-ink`, ...), not raw hex values.
+Frontend commands (in `frontend/`): `npm run dev` (port 1234), `npm run build`, `npm test` (domain rules). Server data goes through React Query hooks in `src/hooks/`; navigation is a sidebar on PC (lg+) and a bottom tab bar on phones. Styling is **Tailwind only**: use the tokens in `styles.css` (`bg-surface`, `text-ink`, `text-accent-ink`, ...), not raw hex values. Panels use the shared surface utilities instead of their own border/background: `surface-card` (cards, sections), `surface-control` (small boxed switchers), `surface-track` (behind segmented choices), `surface-inset` (confirms, notes and editors inside a card) and `surface-sheet` (floating sign-in style cards). The look of every panel is defined once there.
 
 ## Database schema
 
@@ -119,7 +119,7 @@ Design decisions:
 - Request status is **never stored in attendance**. Pending/rejected days in history are derived from the `request` table ("Awaiting approval", "Rejected"); attendance rows exist only once a request is APPROVED (or the employee checks in).
 - On approval, the backend creates or updates one attendance row per working day in the range and sets `request_id`. If a day already has a row: half-day leave and WFH update the leave/work-mode fields and keep `in_time`; full leave is rejected if the employee already checked in that day.
 - The decider (manager or HR) answers APPROVED or REJECTED only; no decision comment. `decided_by_id` and `decided_at` are set by the server.
-- Approval routing: an EMPLOYEE's requests are decided by their `reports_to` manager; managers' and HR staff's requests (and employees without a manager) by HR. HR can also decide any employee's request (override). **Nobody decides their own request**, HR included. Enforced in the app (`can_decide()` in `services/request.py`; the routes let only MANAGER and HR in), because a foreign key cannot check roles or the reporting line. The approvals list shows a manager only the requests they may decide, and nobody their own.
+- Approval routing: an EMPLOYEE's requests are decided by their `reports_to` manager; managers' and HR staff's requests (and employees without a manager) by HR. HR can also decide any employee's request (override). **Nobody decides their own request**, HR included. Enforced in the app (`can_decide()` in `services/request.py`; the routes let only MANAGER and HR in), because a foreign key cannot check roles or the reporting line. The approvals list shows a manager only the requests they may decide, and nobody their own. The frontend mirrors the rule in `lib/domain/approvals.js` (which screen shows which request, and HR's override step).
 - Role checks must be enforced **in the backend** on every route, not only by hiding UI.
 - Managers and HR are also employees (they check in, request leave, etc.). Navigation is layered: employee screens for everyone, + team screens for MANAGER, + everything for HR.
 

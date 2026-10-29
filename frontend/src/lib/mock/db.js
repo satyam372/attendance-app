@@ -7,7 +7,7 @@ import { uuid as randomId } from "./uuid.js";
 // so state survives reloads; bump STORAGE_KEY when the seed shape changes.
 // IDs are UUID strings, like the backend (uuid4).
 
-const STORAGE_KEY = "speedin-mock-db-v5";
+const STORAGE_KEY = "speedin-mock-db-v6";
 
 // Demo-only password for every seeded account (mock mode only, never a real credential).
 export const DEMO_PASSWORD = "speedin123";
@@ -26,12 +26,12 @@ function seed() {
     password: DEMO_PASSWORD,
   });
 
-  return {
+  const db = {
     employees: [
       employee(1, "HR Admin", "hr@speedinnovations.in", Role.HR),
       employee(2, "Ankur Yadav", "ankur@speedinnovations.in"),
       employee(3, "Sandip Sarode", "sandip@speedinnovations.in"),
-      employee(4, "Satyam Pokharna", "satyam@speedinnovations.in"),
+      employee(4, "Satyam Pokharna", "satyam@speedinnovations.in", Role.MANAGER),
       employee(5, "Vishwajit Jadhav", "vishwajit@speedinnovations.in"),
       employee(6, "Poorva Shipugade", "poorva@speedinnovations.in"),
       employee(7, "Snehal Avhad", "snehal@speedinnovations.in"),
@@ -54,6 +54,9 @@ function seed() {
     attendance: [],
     requests: [],
   };
+  // Approvals go to the manager: every employee reports to Satyam; his own requests go to HR
+  for (const e of db.employees) if (e.role === Role.EMPLOYEE) e.reports_to_id = uuid(4);
+  return db;
 }
 
 /** UTC ISO string for a time of day in India (UTC+5:30) on a "YYYY-MM-DD" date. */
@@ -107,7 +110,7 @@ function seedAttendance(db) {
   return seedRequests(db);
 }
 
-/** A few requests for the HR Approvals screen, relative to today: two pending, two decided. */
+/** A few requests relative to today: two pending with the manager, one pending with HR, two decided. */
 function seedRequests(db) {
   const today = toDateKey();
   const closed = new Set(activeHolidays(db).filter((h) => !h.is_optional).map((h) => h.holiday_date));
@@ -121,6 +124,7 @@ function seedRequests(db) {
   };
   const byEmail = (start) => db.employees.find((e) => e.email.startsWith(start)).id;
   const hr = byEmail("hr");
+  const manager = byEmail("satyam");
   const base = { holiday_id: null, decided_by_id: null, decided_at: null, leave_half: null };
   db.requests = [
     { ...base, id: randomId(), employee_id: byEmail("poorva"), request_type: "FULL_LEAVE", leave_category: "CASUAL",
@@ -131,10 +135,14 @@ function seedRequests(db) {
       created_at: new Date(Date.now() - 3 * 3600e3).toISOString() },
     { ...base, id: randomId(), employee_id: byEmail("vishwajit"), request_type: "HALF_DAY_LEAVE", leave_category: "SICK", leave_half: "SECOND_HALF",
       from_date: workingAfter(today, 2), to_date: workingAfter(today, 2), reason: "Doctor's appointment", status: "APPROVED",
-      decided_by_id: hr, decided_at: new Date(Date.now() - 20 * 3600e3).toISOString(), created_at: new Date(Date.now() - 50 * 3600e3).toISOString() },
+      decided_by_id: manager, decided_at: new Date(Date.now() - 20 * 3600e3).toISOString(), created_at: new Date(Date.now() - 50 * 3600e3).toISOString() },
     { ...base, id: randomId(), employee_id: byEmail("satyam"), request_type: "FULL_LEAVE", leave_category: "EARNED",
       from_date: workingAfter(today, 6), to_date: workingAfter(today, 10), reason: "Family trip", status: "REJECTED",
       decided_by_id: hr, decided_at: new Date(Date.now() - 44 * 3600e3).toISOString(), created_at: new Date(Date.now() - 70 * 3600e3).toISOString() },
+    // A manager's own request: HR decides it
+    { ...base, id: randomId(), employee_id: manager, request_type: "FULL_LEAVE", leave_category: "CASUAL",
+      from_date: workingAfter(today, 12), to_date: workingAfter(today, 12), reason: "Bank work", status: "PENDING",
+      created_at: new Date(Date.now() - 5 * 3600e3).toISOString() },
   ];
   return db;
 }

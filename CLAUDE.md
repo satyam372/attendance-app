@@ -117,8 +117,8 @@ Design decisions:
 - Weekends and holidays are skipped in leave/WFH date ranges.
 - Request status is **never stored in attendance**. Pending/rejected days in history are derived from the `request` table ("Awaiting approval", "Rejected"); attendance rows exist only once a request is APPROVED (or the employee checks in).
 - On approval, the backend creates or updates one attendance row per working day in the range and sets `request_id`. If a day already has a row: half-day leave and WFH update the leave/work-mode fields and keep `in_time`; full leave is rejected if the employee already checked in that day.
-- HR decides with APPROVED or REJECTED only; no decision comment. `decided_by_id` and `decided_at` are set by the server.
-- Approval routing (for now): **only HR** lists and decides requests, so `decided_by_id` is always an HR employee. Enforced in the app (HR-only routes + a role check in `decide_request`), because a foreign key cannot check the referenced employee's role. Later: let a `reports_to` manager decide for their direct reports.
+- The decider (manager or HR) answers APPROVED or REJECTED only; no decision comment. `decided_by_id` and `decided_at` are set by the server.
+- Approval routing: an EMPLOYEE's requests are decided by their `reports_to` manager; managers' and HR staff's requests (and employees without a manager) by HR. HR can also decide any employee's request (override). **Nobody decides their own request**, HR included. Enforced in the app (`can_decide()` in `services/request.py`; the routes let only MANAGER and HR in), because a foreign key cannot check roles or the reporting line. The approvals list shows a manager only the requests they may decide, and nobody their own.
 - Role checks must be enforced **in the backend** on every route, not only by hiding UI.
 - Managers and HR are also employees (they check in, request leave, etc.). Navigation is layered: employee screens for everyone, + team screens for MANAGER, + everything for HR.
 

@@ -39,7 +39,7 @@ class RequestNotFoundError(RequestError):
 
 
 class NotAllowedToDecideError(RequestError):
-    """Only HR employees may approve or reject (decided_by_id is always HR)."""
+    """The decider is not the requester's manager (or HR), or it is their own request."""
 
 
 class AlreadyDecidedError(RequestError):
@@ -86,15 +86,17 @@ def list_requests(
     session: Session, decider: Employee, statuses: list[ApprovalStatus] | None = None
 ) -> list[RequestWithEmployee]:
     """Newest first. [PENDING] is "Waiting for you"; [APPROVED, REJECTED] is "Decided";
-    None or [] means every status. HR sees every request; a manager sees only their
-    direct reports' requests."""
+    None or [] means every status. HR sees every request; a manager sees only requests from
+    EMPLOYEEs who report to them (the ones they may decide). Nobody sees their own requests
+    here, because nobody decides their own (they are in GET /api/requests/me)."""
     query = (
         select(Request, Employee.name)
         .join(Employee, Request.employee_id == Employee.id)
         .order_by(Request.created_at.desc())
     )
+    query = query.where(Request.employee_id != decider.id)
     if decider.role != Role.HR:
-        query = query.where(Employee.reports_to_id == decider.id)
+        query = query.where(Employee.reports_to_id == decider.id, Employee.role == Role.EMPLOYEE)
     if statuses:
         query = query.where(Request.status.in_(statuses))
     return [
@@ -163,6 +165,26 @@ def _apply_to_attendance(session: Session, request: Request) -> None:
         session.add(row)
 
 
+def can_decide(decider: Employee, requester: Employee) -> bool:
+    """Who may approve or reject a request. A foreign key cannot check roles or the reporting
+    line, so this is the only place the rule is enforced (the route only lets HR and managers in).
+
+    - Nobody decides their own request, HR included.
+    - HR decides everyone's: the normal path for managers' and HR staff's requests, and an
+      override for employees' requests.
+    - A manager decides only for EMPLOYEEs who report to them; a manager's own request goes to HR.
+    """
+    if decider.id == requester.id:
+        return False
+    if decider.role == Role.HR:
+        return True
+    return (
+        decider.role == Role.MANAGER
+        and requester.role == Role.EMPLOYEE
+        and requester.reports_to_id == decider.id
+    )
+
+
 def decide_request(
     session: Session,
     request_id: uuid.UUID,
@@ -170,13 +192,11 @@ def decide_request(
     status: ApprovalStatus,
     now: datetime | None = None,
 ) -> Request:
-    # decided_by_id must always be an HR employee. A foreign key cannot check the referenced
-    # row's role, so the rule is enforced here (and by the HR-only route).
-    if decider.role != Role.HR:
-        raise NotAllowedToDecideError
     request = session.get(Request, request_id)
     if request is None:
         raise RequestNotFoundError
+    if not can_decide(decider, session.get(Employee, request.employee_id)):
+        raise NotAllowedToDecideError
     if request.status != ApprovalStatus.PENDING:
         raise AlreadyDecidedError
 

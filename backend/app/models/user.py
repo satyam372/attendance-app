@@ -1,7 +1,8 @@
 import uuid
 from datetime import datetime
+from typing import Self
 
-from pydantic import EmailStr, field_validator
+from pydantic import EmailStr, field_validator, model_validator
 from sqlmodel import Field, SQLModel
 
 from app.models.base import TimestampMixin
@@ -51,7 +52,20 @@ class EmployeePublic(EmployeeBase):
     created_at: datetime
 
 
-class EmployeeStatusUpdate(SQLModel):
-    """Body of PATCH /api/employees/{id}: false deactivates the employee, true restores them."""
+class EmployeeUpdate(SQLModel):
+    """Body of PATCH /api/employees/{id}. Send only the fields to change:
+    {"is_active": false} deactivates, {"reports_to_id": "<manager id>"} changes the manager,
+    {"reports_to_id": null} removes it."""
 
-    is_active: bool
+    is_active: bool | None = None
+    reports_to_id: uuid.UUID | None = None
+
+    @model_validator(mode="after")
+    def check_fields(self) -> Self:
+        # model_fields_set = the keys the client actually sent, so a missing key and an
+        # explicit null can be told apart (null is meaningful for reports_to_id only)
+        if not self.model_fields_set:
+            raise ValueError("Send is_active or reports_to_id")
+        if "is_active" in self.model_fields_set and self.is_active is None:
+            raise ValueError("is_active cannot be null")
+        return self

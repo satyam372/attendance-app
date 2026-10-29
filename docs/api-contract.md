@@ -121,7 +121,7 @@ Removing is a soft delete: the row stays so optional-holiday requests keep a val
 |---|---|---|---|---|
 | GET | `/api/employees` | HR | none | `200 Employee[]` sorted by name, active and inactive. Each item has `id` (needed for `PATCH /api/employees/{id}`) |
 | POST | `/api/employees` | HR | `{ "name", "email", "role", "reports_to_id", "is_active", "password" }`. `password` is the temporary password (8+ characters) | `201 Employee` with `must_change_password: true`. `409` duplicate email, `422` "reports_to_id must be an active employee" |
-| PATCH | `/api/employees/{id}` | HR | `{ "is_active": false }` deactivates, `{ "is_active": true }` restores (required) | `200 Employee`. `404` "Employee not found", `409` "You cannot deactivate your own account." |
+| PATCH | `/api/employees/{id}` | HR | `{ "is_active": false }` deactivates, `{ "is_active": true }` restores (required) | `200 Employee`. `404` "Employee not found", `409` "You cannot deactivate your own account.". HR People has Deactivate (with a confirm) and Reactivate on each row except your own |
 
 Deactivation is a soft delete: the row and its attendance history stay. The employee's session stops working on their next request (`401`), and logging in returns `403`.
 

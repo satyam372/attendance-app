@@ -17,6 +17,9 @@
         try { pref = localStorage.getItem("speedin-theme") || "system"; } catch (e) {}
         var dark = pref === "dark" || (pref === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
         if (dark) document.documentElement.classList.add("dark");
+        // "Reduce transparency" (Profile → Appearance): opaque surfaces instead of glass.
+        // Must stay in sync with GLASS_STORAGE_KEY in src/theme/ThemeContext.jsx.
+        try { if (localStorage.getItem("speedin-reduce-transparency") === "1") document.documentElement.classList.add("reduce-glass"); } catch (e) {}
       })();
     </script>
     <link rel="stylesheet" href="./styles.css" />

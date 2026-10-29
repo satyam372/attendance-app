@@ -129,7 +129,7 @@ export default function HrToday() {
             {summary.isLoading
               ? [0, 1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-22" />)
               : cards.map(({ label, value, note, category }) => (
-                  <div key={label} className="flex flex-col gap-1 rounded-[18px] surface-card px-4 py-3.5">
+                  <div key={label} className="flex flex-col gap-1 rounded-[18px] surface-tile px-4 py-3.5">
                     <dt className="flex items-center gap-2 text-[13px] font-semibold text-ink-muted">
                       <StatusDot category={category} />
                       {label}

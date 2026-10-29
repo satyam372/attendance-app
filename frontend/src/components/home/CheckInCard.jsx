@@ -10,6 +10,7 @@ import { LOCATION2_ENABLED, LOCATION2_HOLD_MS, location2 } from "../../lib/geolo
 import { ErrorAlert } from "../ui/Alert.jsx";
 import { Button } from "../ui/Button.jsx";
 import { Skeleton } from "../ui/Skeleton.jsx";
+import { SlidingPill } from "../ui/SlidingPill.jsx";
 import { TodayTimes } from "./TodayTimes.jsx";
 
 const fmtDays = (n) => (Number.isInteger(n) ? String(n) : n.toFixed(1));
@@ -140,13 +141,14 @@ export function CheckInCard({ today, isLoading, isError, onRetry, now }) {
       {phase === "in" && !presetMode && (
         <fieldset className="m-0 w-full max-w-xs border-0 p-0">
           <legend className="mb-2 w-full p-0 text-center text-[13px] font-medium text-ink-muted">Where are you working today?</legend>
-          <div className="grid grid-cols-2 gap-1 rounded-2xl surface-track p-1">
+          <div className="relative grid grid-cols-2 gap-1 rounded-2xl surface-track p-1">
+            <SlidingPill index={MODES.findIndex((m) => m.value === mode)} count={MODES.length} />
             {MODES.map(({ value, label, icon: Icon }) => (
               <label
                 key={value}
                 className={clsx(
-                  "flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl text-sm font-semibold transition has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-focus",
-                  mode === value ? "bg-surface text-accent-ink shadow-sm" : "text-ink-muted hover:text-ink",
+                  "relative flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl text-sm font-semibold transition has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-focus",
+                  mode === value ? "text-accent-ink" : "text-ink-muted hover:text-ink",
                 )}
               >
                 <input

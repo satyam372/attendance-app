@@ -58,7 +58,7 @@ export function PendingRequestCard({ request, closedHolidays, mode = "decide", a
   const choice = decide.variables?.status;
 
   return (
-    <li className="flex flex-col gap-3.5 rounded-[20px] surface-card p-4 sm:p-5">
+    <li className="flex flex-col gap-3.5 rounded-[20px] surface-tile p-4 sm:p-5">
       <div className="flex items-start gap-3">
         <Avatar name={request.employee_name} className="size-10 text-[13px]" />
         <div className="min-w-0 flex-1">

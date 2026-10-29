@@ -7,6 +7,7 @@ import { ChangePasswordForm } from "../components/ChangePasswordForm.jsx";
 import { Avatar } from "../components/ui/Avatar.jsx";
 import { Button } from "../components/ui/Button.jsx";
 import { Card } from "../components/ui/Card.jsx";
+import { SlidingPill } from "../components/ui/SlidingPill.jsx";
 import { ROLE_LABELS } from "../lib/domain/enums.js";
 import { useTheme } from "../theme/ThemeContext.jsx";
 
@@ -18,7 +19,7 @@ const THEMES = [
 
 export default function Profile() {
   const { user, logout } = useAuth();
-  const { preference, setPreference } = useTheme();
+  const { preference, setPreference, reduceTransparency, setReduceTransparency } = useTheme();
   const [signingOut, setSigningOut] = useState(false);
   // "closed" → "open" (form showing) → "changed" (confirmation until opened again)
   const [passwordPanel, setPasswordPanel] = useState("closed");
@@ -43,13 +44,14 @@ export default function Profile() {
       <Card>
         <fieldset className="m-0 border-0 p-0">
           <legend className="mb-3 p-0 text-base font-bold">Appearance</legend>
-          <div className="grid grid-cols-3 gap-1 rounded-2xl surface-track p-1">
+          <div className="relative grid grid-cols-3 gap-1 rounded-2xl surface-track p-1">
+            <SlidingPill index={THEMES.findIndex((t) => t.value === preference)} count={THEMES.length} />
             {THEMES.map(({ value, label, icon: Icon }) => (
               <label
                 key={value}
                 className={clsx(
-                  "flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl text-sm font-semibold transition has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-focus",
-                  preference === value ? "bg-surface text-accent-ink shadow-sm" : "text-ink-muted hover:text-ink",
+                  "relative flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl text-sm font-semibold transition has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-focus",
+                  preference === value ? "text-accent-ink" : "text-ink-muted hover:text-ink",
                 )}
               >
                 <input
@@ -66,6 +68,24 @@ export default function Profile() {
             ))}
           </div>
         </fieldset>
+        {/* Liquid Glass is the default; this switches every surface to solid backgrounds */}
+        <label className="mt-4 flex cursor-pointer items-center justify-between gap-4 rounded-2xl surface-inset px-4 py-3">
+          <span className="min-w-0">
+            <span className="block text-sm font-semibold">Reduce transparency</span>
+            <span className="block text-xs text-ink-muted">Solid backgrounds instead of glass. Easier to read for some people.</span>
+          </span>
+          <input
+            type="checkbox"
+            role="switch"
+            checked={reduceTransparency}
+            onChange={(e) => setReduceTransparency(e.target.checked)}
+            className="peer sr-only"
+          />
+          <span
+            aria-hidden="true"
+            className="relative h-7 w-12 shrink-0 rounded-full bg-line-strong transition peer-checked:bg-accent peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-focus after:absolute after:top-0.5 after:left-0.5 after:size-6 after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:after:translate-x-5"
+          />
+        </label>
       </Card>
 
       <Card aria-labelledby="password-heading" className="flex flex-col gap-4">

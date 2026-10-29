@@ -44,7 +44,7 @@ export function HrTabs() {
     <nav
       ref={navRef}
       aria-label="HR"
-      className="-mb-1 flex gap-1 self-start overflow-x-auto rounded-2xl bg-surface p-1 ring-1 ring-line [scrollbar-width:none] max-sm:max-w-full"
+      className="-mb-1 flex gap-1 self-start overflow-x-auto rounded-2xl surface-control p-1 [scrollbar-width:none] max-sm:max-w-full"
     >
       {tabs.map(({ to, label, short, end, badge }) => (
         <NavLink
@@ -54,7 +54,7 @@ export function HrTabs() {
           className={({ isActive }) =>
             clsx(
               "flex min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl px-3 text-[13px] font-semibold whitespace-nowrap transition sm:px-4 sm:text-sm",
-              isActive ? "bg-accent-soft text-accent-ink" : "text-ink-muted hover:text-ink",
+              isActive ? "surface-pill text-accent-ink" : "text-ink-muted hover:text-ink",
             )
           }
         >

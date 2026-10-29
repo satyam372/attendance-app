@@ -31,7 +31,7 @@ export function TodayTimes({ attendance, now, variant = "cards", className }) {
   return (
     <dl className={clsx("m-0 grid grid-cols-3 gap-2.5", className)}>
       {items.map(({ label, value, icon: Icon, tone }) => (
-        <div key={label} className="flex flex-col gap-1.5 rounded-[18px] surface-card px-3 py-3.5">
+        <div key={label} className="flex flex-col gap-1.5 rounded-[18px] surface-tile px-3 py-3.5">
           <Icon className={clsx("size-5", tone)} strokeWidth={2} aria-hidden="true" />
           {/* dt before dd for screen readers; order-* shows the value above the label */}
           <dt className="order-3 text-xs text-ink-muted">{label}</dt>

@@ -21,14 +21,21 @@ function messageFrom(detail, status) {
   return "The request could not be completed.";
 }
 
+/** Full URL of an API path, for <img src> and links (the session cookie goes along on the same origin). */
+export function apiUrl(path) {
+  return `${API_URL}${path}`;
+}
+
+// `body`: a plain value is sent as JSON; a Blob (e.g. a photo) is sent as-is with its own type.
 export async function apiFetch(path, { method = "GET", body, signal } = {}) {
+  const isBlob = typeof Blob !== "undefined" && body instanceof Blob;
   let response;
   try {
     response = await fetch(`${API_URL}${path}`, {
       method,
       credentials: "include",
-      headers: body === undefined ? undefined : { "Content-Type": "application/json" },
-      body: body === undefined ? undefined : JSON.stringify(body),
+      headers: body === undefined ? undefined : { "Content-Type": isBlob ? body.type : "application/json" },
+      body: body === undefined ? undefined : isBlob ? body : JSON.stringify(body),
       signal,
     });
   } catch (error) {

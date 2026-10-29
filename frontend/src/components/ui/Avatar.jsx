@@ -1,4 +1,5 @@
 import clsx from "clsx";
+import { useState } from "react";
 
 export function initials(name = "") {
   return name
@@ -9,17 +10,22 @@ export function initials(name = "") {
     .join("");
 }
 
-/** Initials in a circle. Decorative: the name is always shown next to it. */
-export function Avatar({ name, className }) {
+/**
+ * Profile photo (`src`) or initials in a circle. Decorative: the name is always shown next to it.
+ * Falls back to the initials when there is no photo or it fails to load.
+ */
+export function Avatar({ name, src, className }) {
+  const [failed, setFailed] = useState(null); // the src that failed, so a new photo is tried again
+  const showPhoto = src && failed !== src;
   return (
     <span
       aria-hidden="true"
       className={clsx(
-        "grid size-11 shrink-0 place-items-center rounded-full bg-accent-soft text-[15px] font-bold text-accent-ink",
+        "grid size-11 shrink-0 place-items-center overflow-hidden rounded-full bg-accent-soft text-[15px] font-bold text-accent-ink",
         className,
       )}
     >
-      {initials(name)}
+      {showPhoto ? <img src={src} alt="" draggable={false} onError={() => setFailed(src)} className="size-full object-cover" /> : initials(name)}
     </span>
   );
 }

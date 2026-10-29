@@ -137,6 +137,19 @@ When HR adds an employee, the frontend generates the temporary password (no look
 Not built yet:
 - Editing `name` and `role` (could extend the same `PATCH`)
 
+## Profile photo (built in #38)
+
+The browser crops and resizes the photo to a 256×256 square (WebP, or JPEG when the browser cannot make WebP) before uploading, so the backend stores a small image (a few KB) in Postgres. No new service or `.env` setting is needed.
+
+| Method | Path | Who | Body | Response |
+|---|---|---|---|---|
+| PUT | `/api/me/photo` | any | the image itself, `Content-Type: image/webp`, `image/jpeg` or `image/png`, at most 200 KB | `200 Employee` with a new `photo_updated_at`. `413` too large, `415` not an allowed image (check the file's first bytes; never SVG) |
+| DELETE | `/api/me/photo` | any | none | `204`, also when there is no photo |
+| DELETE | `/api/employees/{id}/photo` | HR | none | `204`. `404` unknown employee |
+| GET | `/api/employees/{id}/photo` | any | none | `200` image with its own type, `Cache-Control: private, max-age=31536000, immutable` (the URL carries `?v=<photo_updated_at>`), `X-Content-Type-Options: nosniff`. `404` when there is no photo |
+
+`photo_updated_at` (null without a photo) is added to `Employee`, `TeamMemberDay` and `RequestWithEmployee`. The frontend builds the image URL from it and shows initials when it is null. Storage: table `employee_photo` (`employee_id` PK/FK, `content_type`, `data`, `updated_at`) plus `employee.photo_updated_at`.
+
 ## Dashboard (HR)
 
 | Method | Path | Who | Query | Response |

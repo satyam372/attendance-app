@@ -1,4 +1,5 @@
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 
 import { monthOf } from "../lib/domain/time.js";
 import { getCurrentLocation } from "../lib/geolocation.js";
@@ -50,12 +51,22 @@ function useAttendanceAction(mutationFn) {
 /**
  * Checks in with `location` if given, otherwise gets a fresh one (the browser may ask for permission).
  * Call as `mutate({ workMode, location })`: TanStack Query passes only one variable to the mutation.
+ * `locating` is true while waiting for the browser's position, so the card can say so.
  */
 export function useCheckIn() {
-  return useAttendanceAction(async ({ workMode, location }) => {
-    const loc = location ?? (await getCurrentLocation());
+  const [locating, setLocating] = useState(false);
+  const mutation = useAttendanceAction(async ({ workMode, location }) => {
+    if (location) return attendance.checkIn(workMode, location);
+    setLocating(true);
+    let loc;
+    try {
+      loc = await getCurrentLocation();
+    } finally {
+      setLocating(false);
+    }
     return attendance.checkIn(workMode, loc);
   });
+  return { ...mutation, locating };
 }
 
 export function useCheckOut() {

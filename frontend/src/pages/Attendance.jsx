@@ -78,7 +78,7 @@ export default function Attendance() {
               <div
                 key={label}
                 className={clsx(
-                  "flex-col-reverse gap-0.5 rounded-2xl surface-card px-2.5 py-3 lg:flex-col lg:gap-1 lg:rounded-[18px] lg:px-4.5 lg:py-4",
+                  "flex-col-reverse gap-0.5 rounded-2xl surface-tile px-2.5 py-3 lg:flex-col lg:gap-1 lg:rounded-[18px] lg:px-4.5 lg:py-4",
                   pcOnly ? "hidden lg:flex" : "flex",
                 )}
               >

@@ -2,10 +2,12 @@ import clsx from "clsx";
 import { ChevronDown } from "lucide-react";
 import { useId } from "react";
 
+import { SlidingPill } from "./SlidingPill.jsx";
+
 // Labelled <select> and <textarea> styled like TextField (Leave form artboard).
 
 const controlClasses = clsx(
-  "w-full min-w-0 rounded-xl border bg-surface px-3.5 text-[15px] text-ink transition",
+  "w-full min-w-0 rounded-xl border glass-field px-3.5 text-[15px] text-ink transition",
   "placeholder:text-placeholder focus:border-focus focus:ring-4 focus:ring-focus-ring focus:outline-none",
 );
 
@@ -85,13 +87,14 @@ export function Segmented({ legend, name, value, options, onChange, className })
   return (
     <fieldset className={clsx("m-0 min-w-0 border-0 p-0", className)}>
       <legend className="mb-2 p-0 text-[13px] font-semibold text-ink-soft">{legend}</legend>
-      <div className={clsx("grid gap-1 rounded-2xl surface-track p-1", { 2: "grid-cols-2", 3: "grid-cols-3", 4: "grid-cols-4" }[options.length] ?? "grid-cols-2")}>
+      <div className={clsx("relative grid gap-1 rounded-2xl surface-track p-1", { 2: "grid-cols-2", 3: "grid-cols-3", 4: "grid-cols-4" }[options.length] ?? "grid-cols-2")}>
+        <SlidingPill index={options.findIndex((option) => option.value === value)} count={options.length} />
         {options.map((option) => (
           <label
             key={option.value}
             className={clsx(
-              "flex min-h-11 cursor-pointer items-center justify-center rounded-xl px-2 text-center text-[13px] leading-tight font-semibold transition has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-focus",
-              value === option.value ? "bg-surface text-accent-ink shadow-sm" : "text-ink-muted hover:text-ink",
+              "relative flex min-h-11 cursor-pointer items-center justify-center rounded-xl px-2 text-center text-[13px] leading-tight font-semibold transition has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-focus",
+              value === option.value ? "text-accent-ink" : "text-ink-muted hover:text-ink",
             )}
           >
             <input type="radio" name={name} value={option.value} checked={value === option.value} onChange={() => onChange(option.value)} className="sr-only" />

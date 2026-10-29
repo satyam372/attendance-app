@@ -39,7 +39,7 @@ export function MonthStats({ today, className }) {
     <section aria-label="This month" className={className}>
       <dl className="m-0 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {stats.map(({ label, value, suffix, tone }) => (
-          <div key={label} className="flex flex-col gap-1.5 rounded-[20px] surface-card p-4.5">
+          <div key={label} className="flex flex-col gap-1.5 rounded-[20px] surface-tile p-4.5">
             <dt className="text-[13px] font-semibold text-ink-muted">{label}</dt>
             <dd className={clsx("m-0 text-[26px] leading-tight font-extrabold tabular-nums", tone)}>
               {value}

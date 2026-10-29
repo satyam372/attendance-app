@@ -3,7 +3,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { useId, useState } from "react";
 
 const inputClasses = clsx(
-  "h-13 w-full min-w-0 rounded-field border bg-field px-4 text-[15px] text-ink transition duration-200",
+  "h-13 w-full min-w-0 rounded-field border glass-field px-4 text-[15px] text-ink transition duration-200",
   "placeholder:text-placeholder",
   "focus:border-focus focus:ring-4 focus:ring-focus-ring focus:outline-none",
 );

@@ -190,7 +190,7 @@ export default function HrTeam() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search name or email"
-                className="h-10 w-full rounded-xl border border-line-strong bg-surface pr-3 pl-9 text-sm text-ink placeholder:text-placeholder focus:border-focus focus:ring-4 focus:ring-focus-ring focus:outline-none"
+                className="h-10 w-full rounded-xl border border-line-strong glass-field pr-3 pl-9 text-sm text-ink placeholder:text-placeholder focus:border-focus focus:ring-4 focus:ring-focus-ring focus:outline-none"
               />
             </label>
           </div>

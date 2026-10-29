@@ -137,7 +137,7 @@ When HR adds an employee, the frontend generates the temporary password (no look
 Not built yet:
 - Editing `name` and `role` (could extend the same `PATCH`)
 
-## Profile photo (agreed 2026-10-29, not built in the backend yet)
+## Profile photo (built in #38)
 
 The browser crops and resizes the photo to a 256×256 square (WebP, or JPEG when the browser cannot make WebP) before uploading, so the backend stores a small image (a few KB) in Postgres. No new service or `.env` setting is needed.
 

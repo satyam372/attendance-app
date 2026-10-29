@@ -1,6 +1,8 @@
 import clsx from "clsx";
-import { Search } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Search, UserX } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+
+import { useAuth } from "../auth/AuthContext.jsx";
 
 import { AddEmployeeForm } from "../components/hr/AddEmployeeForm.jsx";
 import { HrTabs } from "../components/hr/HrTabs.jsx";
@@ -8,7 +10,7 @@ import { ErrorAlert } from "../components/ui/Alert.jsx";
 import { Avatar } from "../components/ui/Avatar.jsx";
 import { Button } from "../components/ui/Button.jsx";
 import { Skeleton } from "../components/ui/Skeleton.jsx";
-import { useEmployees } from "../hooks/useEmployees.js";
+import { useEmployees, useSetEmployeeActive } from "../hooks/useEmployees.js";
 import { Role, ROLE_LABELS } from "../lib/domain/enums.js";
 
 const ROLE_CHIP = {
@@ -17,10 +19,89 @@ const ROLE_CHIP = {
   [Role.EMPLOYEE]: "bg-field text-ink-soft",
 };
 
-/** HR people list (GET /api/employees) and the add-employee form. */
+function PersonRow({ person, isMe, confirming, busy, onAskDeactivate, onConfirm, onCancel, onReactivate }) {
+  const cancelRef = useRef(null);
+
+  // Move focus into the confirm step (Cancel is the safe default)
+  useEffect(() => {
+    if (confirming) cancelRef.current?.focus();
+  }, [confirming]);
+
+  return (
+    <li className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-line/70 py-3 last:border-b-0">
+      <Avatar name={person.name} className={clsx("size-10 text-[13px]", !person.is_active && "grayscale")} />
+      <div className="min-w-0 flex-1">
+        <p className={clsx("m-0 truncate text-sm font-semibold", !person.is_active && "text-ink-muted")}>
+          {person.name}
+          {isMe && <span className="font-normal text-ink-muted"> (you)</span>}
+        </p>
+        <p className="m-0 truncate text-xs text-ink-muted">{person.email}</p>
+      </div>
+      {/* Chips sit under the name on phones, on the right from sm up */}
+      <div className="order-last flex basis-full gap-1.5 pl-13 sm:order-none sm:basis-auto sm:pl-0">
+        {!person.is_active && <span className="shrink-0 rounded-full bg-field px-2.5 py-1 text-xs font-bold text-ink-muted">Inactive</span>}
+        <span className={clsx("shrink-0 rounded-full px-2.5 py-1 text-xs font-bold", ROLE_CHIP[person.role])}>{ROLE_LABELS[person.role]}</span>
+      </div>
+      {!isMe &&
+        !confirming &&
+        (person.is_active ? (
+          <Button variant="ghost" size="icon" aria-label={`Deactivate ${person.name}`} onClick={() => onAskDeactivate(person)} className="-mr-2 shrink-0">
+            <UserX className="size-4.5" aria-hidden="true" />
+          </Button>
+        ) : (
+          <Button variant="secondary" loading={busy} onClick={() => onReactivate(person)} aria-label={`Reactivate ${person.name}`} className="shrink-0">
+            Reactivate
+          </Button>
+        ))}
+      {confirming && (
+        <div role="group" aria-label={`Deactivate ${person.name}?`} className="order-last flex w-full flex-wrap items-center gap-x-3 gap-y-2 rounded-xl bg-field px-3.5 py-2.5">
+          <p className="m-0 min-w-0 flex-1 basis-52 text-sm text-ink-soft">
+            Deactivate <strong className="text-ink">{person.name}</strong>? They can&rsquo;t sign in until you reactivate them. Their attendance history stays.
+          </p>
+          <div className="flex gap-2">
+            <Button ref={cancelRef} variant="ghost" onClick={onCancel} disabled={busy}>
+              Cancel
+            </Button>
+            <Button variant="danger" loading={busy} onClick={() => onConfirm(person)}>
+              {busy ? "Deactivating" : "Deactivate"}
+            </Button>
+          </div>
+        </div>
+      )}
+    </li>
+  );
+}
+
+/**
+ * HR people list (GET /api/employees), deactivating and reactivating accounts
+ * (PATCH /api/employees/{id}, soft delete) and the add-employee form.
+ */
 export default function HrTeam() {
   const employees = useEmployees();
+  const { user } = useAuth();
+  const setActive = useSetEmployeeActive();
   const [query, setQuery] = useState("");
+  const [confirmingId, setConfirmingId] = useState(null);
+  const [notice, setNotice] = useState("");
+  const noticeRef = useRef(null);
+
+  function change(person, isActive) {
+    setNotice("");
+    setActive.mutate(
+      { id: person.id, isActive },
+      {
+        onSuccess: () => {
+          setConfirmingId(null);
+          setNotice(isActive ? `${person.name} can sign in again.` : `${person.name} is deactivated and can no longer sign in.`);
+        },
+      },
+    );
+  }
+
+  // The confirm row closes, so focus moves to the result message instead of being lost
+  useEffect(() => {
+    if (notice) noticeRef.current?.focus();
+  }, [notice]);
 
   useEffect(() => {
     document.title = "People · SpeedIn";
@@ -61,6 +142,12 @@ export default function HrTeam() {
             </label>
           </div>
 
+          <ErrorAlert>{setActive.error?.message}</ErrorAlert>
+          {notice && (
+            <p ref={noticeRef} tabIndex={-1} role="status" className="m-0 rounded-xl bg-field px-3.5 py-2.5 text-sm font-semibold text-ink-soft focus:outline-none">
+              {notice}
+            </p>
+          )}
           {employees.isError ? (
             <div className="flex flex-col gap-3">
               <ErrorAlert>{employees.error?.message ?? "Couldn't load people."}</ErrorAlert>
@@ -75,15 +162,21 @@ export default function HrTeam() {
           ) : (
             <ul className="m-0 list-none p-0">
               {shown.map((person) => (
-                <li key={person.email} className={clsx("flex items-center gap-3 border-b border-line/70 py-3 last:border-b-0", !person.is_active && "opacity-60")}>
-                  <Avatar name={person.name} className="size-10 text-[13px]" />
-                  <div className="min-w-0 flex-1">
-                    <p className="m-0 truncate text-sm font-semibold">{person.name}</p>
-                    <p className="m-0 truncate text-xs text-ink-muted">{person.email}</p>
-                  </div>
-                  {!person.is_active && <span className="shrink-0 rounded-full bg-field px-2.5 py-1 text-xs font-bold text-ink-muted">Inactive</span>}
-                  <span className={clsx("shrink-0 rounded-full px-2.5 py-1 text-xs font-bold", ROLE_CHIP[person.role])}>{ROLE_LABELS[person.role]}</span>
-                </li>
+                <PersonRow
+                  key={person.id}
+                  person={person}
+                  isMe={person.id === user.id}
+                  confirming={confirmingId === person.id}
+                  busy={setActive.isPending && setActive.variables?.id === person.id}
+                  onAskDeactivate={(p) => {
+                    setActive.reset();
+                    setNotice("");
+                    setConfirmingId(p.id);
+                  }}
+                  onConfirm={(p) => change(p, false)}
+                  onCancel={() => setConfirmingId(null)}
+                  onReactivate={(p) => change(p, true)}
+                />
               ))}
             </ul>
           )}

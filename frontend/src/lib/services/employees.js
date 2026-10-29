@@ -26,3 +26,9 @@ export function setHolidayActive(id, isActive) {
   if (USE_MOCK_API) return mock.setHolidayActive(id, isActive);
   return apiFetch(`/holidays/${id}`, { method: "PATCH", body: { is_active: isActive } });
 }
+
+/** PATCH /employees/{id} (HR) with { is_active } → EmployeePublic. 409 when deactivating yourself, 404 if unknown. */
+export function setEmployeeActive(id, isActive) {
+  if (USE_MOCK_API) return mock.setEmployeeActive(id, isActive);
+  return apiFetch(`/employees/${id}`, { method: "PATCH", body: { is_active: isActive } });
+}

@@ -42,3 +42,15 @@ export function useSetHolidayActive() {
     onSuccess: () => refreshAfterHolidayChange(queryClient),
   });
 }
+
+/** Deactivate ({ id, isActive: false }) or reactivate an employee; the team list and HR dashboard refresh. */
+export function useSetEmployeeActive() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, isActive }) => employees.setEmployeeActive(id, isActive),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["employees"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+  });
+}

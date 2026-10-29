@@ -77,3 +77,15 @@ export async function setHolidayActive(id, isActive) {
   saveDb();
   return { ...holiday };
 }
+
+/** PATCH /employees/{id} with { is_active }: soft delete, like services/employee.set_employee_active. */
+export async function setEmployeeActive(id, isActive) {
+  await delay(400);
+  requireHr();
+  const employee = getDb().employees.find((e) => e.id === id);
+  if (!employee) throw new ApiError(404, "Employee not found");
+  if (employee.id === currentEmployee().id && !isActive) throw new ApiError(409, "You cannot deactivate your own account.");
+  employee.is_active = isActive;
+  saveDb();
+  return publicEmployee(employee);
+}

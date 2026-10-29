@@ -33,13 +33,15 @@ export async function createEmployee(body) {
   if (new TextEncoder().encode(body.password).length > 72) throw new ApiError(422, "Password must be at most 72 bytes");
   const db = getDb();
   if (db.employees.some((e) => e.email === email)) throw new ApiError(409, "An employee with this email already exists");
+  const role = body.role ?? Role.EMPLOYEE;
+  const reportsTo = checkManager(db, body.reports_to_id ?? null);
 
   const employee = {
     id: uuid(),
     name,
     email,
-    role: body.role ?? Role.EMPLOYEE,
-    reports_to_id: null,
+    role,
+    reports_to_id: reportsTo,
     is_active: body.is_active ?? true,
     must_change_password: true,
     created_at: new Date().toISOString(),
@@ -78,14 +80,38 @@ export async function setHolidayActive(id, isActive) {
   return { ...holiday };
 }
 
-/** PATCH /employees/{id} with { is_active }: soft delete, like services/employee.set_employee_active. */
-export async function setEmployeeActive(id, isActive) {
+/**
+ * reports_to rules, as backend services/employee._check_manager: an active MANAGER, or null
+ * (then HR decides their requests); never themselves or someone in their own team.
+ */
+function checkManager(db, reportsToId, selfId = null) {
+  if (!reportsToId) return null; // allowed (HR then decides); the add form still asks for one
+  const manager = db.employees.find((e) => e.id === reportsToId);
+  if (!manager || !manager.is_active || manager.role !== Role.MANAGER) throw new ApiError(422, "reports_to_id must be an active manager");
+  // Self-reference or a loop (A -> B -> A), like backend _reports_to_chain
+  for (let id = reportsToId, seen = new Set(); id && !seen.has(id); id = db.employees.find((e) => e.id === id)?.reports_to_id) {
+    if (id === selfId) throw new ApiError(422, "An employee cannot report to themselves or to someone in their own team.");
+    seen.add(id);
+  }
+  return reportsToId;
+}
+
+/** PATCH /employees/{id} with { is_active?, reports_to_id? }: soft delete/restore, or change the manager. */
+export async function updateEmployee(id, changes) {
   await delay(400);
   requireHr();
-  const employee = getDb().employees.find((e) => e.id === id);
+  const db = getDb();
+  const employee = db.employees.find((e) => e.id === id);
   if (!employee) throw new ApiError(404, "Employee not found");
-  if (employee.id === currentEmployee().id && !isActive) throw new ApiError(409, "You cannot deactivate your own account.");
-  employee.is_active = isActive;
+  if ("reports_to_id" in changes) employee.reports_to_id = checkManager(db, changes.reports_to_id, employee.id);
+  if (changes.is_active === false) {
+    if (employee.id === currentEmployee().id) throw new ApiError(409, "You cannot deactivate your own account.");
+    // Their reports would be left with nobody to approve their requests
+    if (db.employees.some((e) => e.reports_to_id === employee.id && e.is_active)) {
+      throw new ApiError(409, `Assign ${employee.name}'s team to another manager first.`);
+    }
+  }
+  if ("is_active" in changes) employee.is_active = changes.is_active;
   saveDb();
   return publicEmployee(employee);
 }

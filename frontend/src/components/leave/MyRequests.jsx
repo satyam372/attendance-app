@@ -45,7 +45,9 @@ function MyRequestItem({ request, closedHolidays }) {
       {request.reason && <p className="m-0 text-sm text-ink-muted">&ldquo;{request.reason}&rdquo;</p>}
       <p className="m-0 text-xs text-ink-muted">
         Applied {shortDate(toDateKey(request.created_at))}
+        {request.status === "PENDING" && request.approver_name && ` · waiting for ${request.approver_name}`}
         {request.decided_at && ` · ${request.status === "APPROVED" ? "approved" : "rejected"} ${shortDate(toDateKey(request.decided_at))}`}
+        {request.decided_by_name && ` by ${request.decided_by_name}`}
       </p>
     </li>
   );

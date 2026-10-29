@@ -10,10 +10,13 @@ import { SelectField } from "../ui/Fields.jsx";
 import { TextField } from "../ui/TextField.jsx";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const emptyForm = () => ({ name: "", email: "", role: Role.EMPLOYEE, password: generateTemporaryPassword() });
+const emptyForm = () => ({ name: "", email: "", role: Role.EMPLOYEE, reportsTo: "", password: generateTemporaryPassword() });
 
-/** HR adds an employee with a temporary password → POST /api/employees. */
-export function AddEmployeeForm() {
+/**
+ * HR adds an employee with a temporary password → POST /api/employees. Employees must report to a
+ * manager (`managers`: active MANAGER accounts), because their manager approves their requests.
+ */
+export function AddEmployeeForm({ managers = [] }) {
   const createEmployee = useCreateEmployee();
   const [form, setForm] = useState(emptyForm);
   const [errors, setErrors] = useState({});
@@ -33,9 +36,17 @@ export function AddEmployeeForm() {
     if (!EMAIL_PATTERN.test(form.email.trim())) found.email = "Enter a valid work email.";
     const passwordError = newPasswordError(form.password);
     if (passwordError) found.password = passwordError;
+    if (form.role === Role.EMPLOYEE && !form.reportsTo) found.reportsTo = "Choose who approves their leave.";
     setErrors(found);
     if (Object.keys(found).length) return;
-    const body = { name: form.name.trim(), email: form.email.trim().toLowerCase(), role: form.role, password: form.password };
+    const body = {
+      name: form.name.trim(),
+      email: form.email.trim().toLowerCase(),
+      role: form.role,
+      // Managers' and HR's requests go to HR, so only employees need a manager
+      reports_to_id: form.role === Role.EMPLOYEE ? form.reportsTo : null,
+      password: form.password,
+    };
     createEmployee.mutate(body, { onSuccess: (employee) => setCreated({ employee, password: form.password }) });
   }
 
@@ -105,6 +116,25 @@ export function AddEmployeeForm() {
           </option>
         ))}
       </SelectField>
+      {form.role === Role.EMPLOYEE ? (
+        <SelectField
+          label="Reports to"
+          value={form.reportsTo}
+          onChange={(e) => update({ reportsTo: e.target.value })}
+          error={errors.reportsTo}
+          hint={managers.length ? "Their manager approves their leave and WFH requests." : "Add a manager first: employees need one to approve their requests."}
+          disabled={!managers.length}
+        >
+          <option value="">Choose a manager</option>
+          {managers.map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.name}
+            </option>
+          ))}
+        </SelectField>
+      ) : (
+        <p className="m-0 -mt-1 text-xs text-ink-muted">{ROLE_LABELS[form.role]} requests are approved by HR.</p>
+      )}
       <TextField
         label="Temporary password"
         autoComplete="new-password"

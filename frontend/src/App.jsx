@@ -31,6 +31,9 @@ export default function App() {
           <Route path="/attendance" element={<Attendance />} />
           <Route path="/leave" element={<Leave />} />
           <Route path="/profile" element={<Profile />} />
+          <Route element={<ProtectedRoute roles={[Role.MANAGER]} />}>
+            <Route path="/approvals" element={<HrApprovals />} />
+          </Route>
           <Route element={<ProtectedRoute roles={[Role.HR]} />}>
             <Route path="/hr" element={<HrToday />} />
             <Route path="/hr/sheet" element={<HrSheet />} />

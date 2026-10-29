@@ -1,4 +1,5 @@
 import { ApiError } from "../api.js";
+import { approverName, decisionRight } from "../domain/approvals.js";
 import { LeaveCategory, LeavePortion, Role, WorkMode } from "../domain/enums.js";
 import { validateRequest } from "../domain/requests.js";
 import { workingDaysInRange } from "../domain/rules.js";
@@ -64,7 +65,7 @@ export async function createRequest(body) {
   };
   db.requests.push(request);
   saveDb();
-  return request;
+  return withNames(db, request);
 }
 
 /** PENDING or REJECTED per day for one employee (PENDING wins), like backend _open_request_status_by_day. */
@@ -85,22 +86,39 @@ function nextDay(dateKey) {
   return new Date(Date.UTC(y, m - 1, d + 1)).toISOString().slice(0, 10);
 }
 
-function requireHr() {
+function requireDecider() {
   const user = currentEmployee();
-  if (user.role !== Role.HR) throw new ApiError(403, "You do not have permission to do this");
+  if (user.role !== Role.HR && user.role !== Role.MANAGER) throw new ApiError(403, "You do not have permission to do this");
   return user;
 }
 
-/** GET /requests?status=… (HR): RequestWithEmployee[], newest first. No statuses = all. */
+/** RequestPublic plus who approves it and who decided it, by name (agreed new fields). */
+function withNames(db, request) {
+  const byId = new Map(db.employees.map((e) => [e.id, e]));
+  const requester = byId.get(request.employee_id);
+  return {
+    ...request,
+    approver_name: requester ? approverName(requester, byId) : null,
+    decided_by_name: request.decided_by_id ? (byId.get(request.decided_by_id)?.name ?? null) : null,
+  };
+}
+
+/**
+ * GET /requests?status=… (HR or manager): RequestWithEmployee[], newest first. No statuses = all.
+ * HR sees every request; a manager only the ones they decide; nobody their own.
+ */
 export async function listRequests(statuses = []) {
   await delay(300);
-  requireHr();
+  const user = requireDecider();
   const db = getDb();
-  const names = new Map(db.employees.map((e) => [e.id, e.name]));
+  const byId = new Map(db.employees.map((e) => [e.id, e]));
   return db.requests
+    // Never your own (they are in /requests/me); a manager only what they decide
+    .filter((r) => r.employee_id !== user.id)
+    .filter((r) => user.role === Role.HR || decisionRight(user, byId.get(r.employee_id), byId) === "decide")
     .filter((r) => statuses.length === 0 || statuses.includes(r.status))
     .sort((a, b) => b.created_at.localeCompare(a.created_at))
-    .map((r) => ({ ...r, employee_name: names.get(r.employee_id) ?? "Unknown" }));
+    .map((r) => ({ ...withNames(db, r), employee_name: byId.get(r.employee_id)?.name ?? "Unknown" }));
 }
 
 const ATTENDANCE_VALUES = {
@@ -139,26 +157,32 @@ function applyToAttendance(db, request) {
 /** POST /requests/{id}/decision (HR) with APPROVED or REJECTED → RequestPublic. */
 export async function decideRequest(id, status) {
   await delay(450);
-  const decider = requireHr();
+  const decider = requireDecider();
   if (status !== "APPROVED" && status !== "REJECTED") throw new ApiError(422, "Input should be 'APPROVED' or 'REJECTED'");
   const db = getDb();
   const request = db.requests.find((r) => r.id === id);
   if (!request) throw new ApiError(404, "Request not found.");
+  // Manager for their reports, HR for managers/HR (or as an override); never your own request
+  const byId = new Map(db.employees.map((e) => [e.id, e]));
+  if (!decisionRight(decider, byId.get(request.employee_id), byId)) {
+    throw new ApiError(403, "You can only decide requests from your own team, and never your own.");
+  }
   if (request.status !== "PENDING") throw new ApiError(409, "This request has already been decided.");
   if (status === "APPROVED") applyToAttendance(db, request);
   request.status = status;
   request.decided_by_id = decider.id;
   request.decided_at = new Date().toISOString();
   saveDb();
-  return request;
+  return withNames(db, request);
 }
 
 /** GET /requests/me: own requests only (the id comes from the session), newest first. */
 export async function getMyRequests() {
   await delay(250);
   const employee = currentEmployee();
-  return getDb()
-    .requests.filter((r) => r.employee_id === employee.id)
+  const db = getDb();
+  return db.requests
+    .filter((r) => r.employee_id === employee.id)
     .sort((a, b) => b.created_at.localeCompare(a.created_at))
-    .map((r) => ({ ...r }));
+    .map((r) => withNames(db, r));
 }

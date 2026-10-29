@@ -9,7 +9,7 @@ export function listEmployees() {
   return apiFetch("/employees");
 }
 
-/** POST /employees (HR) with { name, email, role, password } → 201 EmployeePublic. 409 if the email exists. */
+/** POST /employees (HR) with { name, email, role, reports_to_id, password } → 201 EmployeePublic. 409 if the email exists. */
 export function createEmployee(body) {
   if (USE_MOCK_API) return mock.createEmployee(body);
   return apiFetch("/employees", { method: "POST", body });
@@ -27,8 +27,11 @@ export function setHolidayActive(id, isActive) {
   return apiFetch(`/holidays/${id}`, { method: "PATCH", body: { is_active: isActive } });
 }
 
-/** PATCH /employees/{id} (HR) with { is_active } → EmployeePublic. 409 when deactivating yourself, 404 if unknown. */
-export function setEmployeeActive(id, isActive) {
-  if (USE_MOCK_API) return mock.setEmployeeActive(id, isActive);
-  return apiFetch(`/employees/${id}`, { method: "PATCH", body: { is_active: isActive } });
+/**
+ * PATCH /employees/{id} (HR) with { is_active } and/or { reports_to_id } → EmployeePublic.
+ * 409 when deactivating yourself or a manager who still has a team, 422 for an invalid manager, 404 if unknown.
+ */
+export function updateEmployee(id, changes) {
+  if (USE_MOCK_API) return mock.updateEmployee(id, changes);
+  return apiFetch(`/employees/${id}`, { method: "PATCH", body: changes });
 }

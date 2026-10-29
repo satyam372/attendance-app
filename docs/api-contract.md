@@ -92,10 +92,10 @@ Not built yet:
 |---|---|---|---|---|
 | POST | `/api/requests` | any | `request_type`, `from_date`, `to_date`, `leave_half`, `leave_category`, `holiday_id`, `reason` (optional). Combination rules per schema.md | `201 Request` (status PENDING). `422` "The selected dates are all weekends or holidays.", "Choose an optional holiday on the selected date.", or a combination rule. `409` "You already have a request for some of these dates." |
 | GET | `/api/requests/me` | any | none | `200 Request[]`, the logged-in employee's own requests (every status), newest first. Used by "My requests" on the Leave screen |
-| GET | `/api/requests?status=PENDING` | HR, MANAGER (pending backend change) | `status` optional and repeatable: `?status=APPROVED&status=REJECTED` for the Decided list | `200 RequestWithEmployee[]`, newest first. HR gets every request, a manager only their direct reports' |
-| POST | `/api/requests/{id}/decision` | the approver (pending backend change: the employee's manager; HR for managers' and HR requests or as an override; never your own) | `{ "status": "APPROVED" \| "REJECTED" }` | `200 Request`. `403` when you may not decide it. Approval writes the attendance rows (working days only) in the same transaction. `404`, `409` "This request has already been decided.", `409` full-day leave on a day the employee already checked in |
+| GET | `/api/requests?status=PENDING` | HR, MANAGER | `status` optional and repeatable: `?status=APPROVED&status=REJECTED` for the Decided list | `200 RequestWithEmployee[]`, newest first. HR: everyone's; manager: only their direct reports who are EMPLOYEEs. Never the caller's own requests (those are in `/api/requests/me`) |
+| POST | `/api/requests/{id}/decision` | HR, MANAGER | `{ "status": "APPROVED" \| "REJECTED" }` | `200 Request`. Approval writes the attendance rows (working days only) in the same transaction. `403` "You can only decide requests from your own team, and never your own.", `404`, `409` "This request has already been decided.", `409` full-day leave on a day the employee already checked in |
 
-Pending backend change (agreed 2026-10-29): `Request` and `RequestWithEmployee` also carry `approver_name` (the manager's name, or "HR") and `decided_by_name`. The frontend shows them when present.
+Requested from the backend, not built yet: `approver_name` (the manager's name, or "HR") and `decided_by_name` on `Request` and `RequestWithEmployee`. The frontend shows them when present.
 
 Combination rules (`RequestBase.check_combination`, mirrored in `frontend/src/lib/domain/requests.js`):
 - `to_date >= from_date`; half-day types (`HALF_DAY_LEAVE`, `HALF_LEAVE_HALF_WFH`) cover one date and need `leave_half`.
@@ -103,7 +103,7 @@ Combination rules (`RequestBase.check_combination`, mirrored in `frontend/src/li
 - An optional holiday is a one-date `FULL_LEAVE` with `leave_category: OPTIONAL_HOLIDAY` and the holiday's `holiday_id`.
 - Every request starts PENDING (WFH too).
 
-Only HR decides for now (`decided_by_id` is always HR). Pending and rejected requests show in history as `AWAITING_APPROVAL` / `REJECTED`.
+Who decides: an EMPLOYEE's `reports_to` manager; HR for managers, HR staff and employees without a manager; HR may also override for any employee. Nobody decides their own request. Show the Approvals screen to MANAGER and HR. Pending and rejected requests show in history as `AWAITING_APPROVAL` / `REJECTED`.
 
 ## Holidays
 
@@ -122,8 +122,8 @@ Removing is a soft delete: the row stays so optional-holiday requests keep a val
 | Method | Path | Who | Body | Response |
 |---|---|---|---|---|
 | GET | `/api/employees` | HR | none | `200 Employee[]` sorted by name, active and inactive. Each item has `id` (needed for `PATCH /api/employees/{id}`) |
-| POST | `/api/employees` | HR | `{ "name", "email", "role", "reports_to_id", "is_active", "password" }`. `password` is the temporary password (8+ characters) | `201 Employee` with `must_change_password: true`. `409` duplicate email, `422` "reports_to_id must be an active employee". Pending backend change: `reports_to_id` required for EMPLOYEE and must be an active MANAGER |
-| PATCH | `/api/employees/{id}` | HR | `{ "is_active": false }` deactivates, `{ "is_active": true }` restores. Pending backend change: `{ "reports_to_id" }` changes the manager, and deactivating a manager who still has active reports is `409` "Assign {name}'s team to another manager first." | `200 Employee`. `404` "Employee not found", `409` "You cannot deactivate your own account.". HR People has Deactivate (with a confirm) and Reactivate on each row except your own |
+| POST | `/api/employees` | HR | `{ "name", "email", "role", "reports_to_id", "is_active", "password" }`. `password` is the temporary password (8+ characters) | `201 Employee` with `must_change_password: true`. `409` duplicate email, `422` "reports_to_id must be an active employee". Requested, not built yet: `reports_to_id` required for EMPLOYEE and must be an active MANAGER (the form already requires it) |
+| PATCH | `/api/employees/{id}` | HR | `{ "is_active": false }` deactivates, `{ "is_active": true }` restores. Requested, not built yet: `{ "reports_to_id" }` to change the manager, and `409` "Assign {name}'s team to another manager first." when deactivating a manager who still has active reports | `200 Employee`. `404` "Employee not found", `409` "You cannot deactivate your own account.". HR People has Deactivate (with a confirm) and Reactivate on each row except your own |
 
 Deactivation is a soft delete: the row and its attendance history stay. The employee's session stops working on their next request (`401`), and logging in returns `403`.
 

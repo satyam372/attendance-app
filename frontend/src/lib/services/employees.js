@@ -3,6 +3,10 @@ import * as mock from "../mock/employees.js";
 
 // HR people and holiday management (backend routes/employees.py and routes/holidays.py).
 
+// PATCH /employees/{id} only takes { is_active } so far; changing reports_to is requested from the
+// backend. Until then "Change manager" is offered in mock mode only.
+export const CAN_CHANGE_MANAGER = USE_MOCK_API;
+
 /** GET /employees (HR) → EmployeePublic[]: id, name, email, role, reports_to_id, is_active, must_change_password, created_at. */
 export function listEmployees() {
   if (USE_MOCK_API) return mock.listEmployees();

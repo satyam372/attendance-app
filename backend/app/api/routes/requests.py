@@ -26,16 +26,19 @@ from app.services.request import (
 
 router = APIRouter(prefix="/requests", tags=["requests"])
 
-# For now only HR lists and decides requests (decided_by_id is always an HR employee).
-# Manager approval for direct reports can be added later by allowing Role.MANAGER here.
-DeciderDep = Annotated[Employee, Depends(require_role(Role.HR))]
+# HR and managers list and decide requests. Which requests each one may decide (a manager:
+# only their direct reports) is checked in the service, by can_decide().
+DeciderDep = Annotated[Employee, Depends(require_role(Role.HR, Role.MANAGER))]
 
 _ERRORS: dict[type[RequestError], tuple[int, str]] = {
     NoWorkingDaysError: (422, "The selected dates are all weekends or holidays."),
     InvalidOptionalHolidayError: (422, "Choose an optional holiday on the selected date."),
     OverlappingRequestError: (409, "You already have a request for some of these dates."),
     RequestNotFoundError: (404, "Request not found."),
-    NotAllowedToDecideError: (403, "Only HR can approve or reject requests."),
+    NotAllowedToDecideError: (
+        403,
+        "You can only decide requests from your own team, and never your own.",
+    ),
     AlreadyDecidedError: (409, "This request has already been decided."),
     AlreadyCheckedInError: (
         409,
@@ -72,8 +75,8 @@ def get_requests(
     # Repeat the parameter for several values: ?status=APPROVED&status=REJECTED
     request_status: Annotated[list[ApprovalStatus] | None, Query(alias="status")] = None,
 ) -> list[RequestWithEmployee]:
-    """HR list. ?status=PENDING for "Waiting for you", ?status=APPROVED&status=REJECTED for
-    "Decided", no filter for everything."""
+    """Approvals list (HR: everyone; manager: their direct reports). ?status=PENDING for
+    "Waiting for you", ?status=APPROVED&status=REJECTED for "Decided", no filter for everything."""
     return list_requests(session, decider, request_status)
 
 

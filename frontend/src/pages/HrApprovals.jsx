@@ -13,7 +13,7 @@ import { splitForHr } from "../lib/domain/approvals.js";
 import { Role } from "../lib/domain/enums.js";
 
 const EMPTY = {
-  forYou: "Nothing is waiting for you. Requests from managers and HR staff show up here.",
+  forYou: "Nothing is waiting for you. Requests from managers, HR staff and employees without a manager show up here.",
   withManagers: "No requests are waiting for a manager.",
   waiting: "Nothing is waiting. Leave and WFH requests from your team show up here.",
 };
@@ -64,7 +64,7 @@ export default function HrApprovals() {
           <h1 className="m-0 text-2xl font-extrabold tracking-[-0.02em] lg:text-[28px]">{isHr ? "Requests" : "Team requests"}</h1>
           <p className="m-0 mt-1 max-w-xl text-sm text-ink-muted">
             {isHr
-              ? "Managers approve their team's leave and WFH. You approve managers' and HR staff's requests, and can step in when a manager can't."
+              ? "Managers approve their team's leave and WFH. You approve requests from managers, HR staff and anyone without a manager, and can step in when a manager can't."
               : "Leave and work from home requests from people who report to you. Approving updates their attendance."}
           </p>
         </div>

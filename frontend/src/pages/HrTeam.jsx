@@ -11,6 +11,7 @@ import { Button } from "../components/ui/Button.jsx";
 import { SelectField } from "../components/ui/Fields.jsx";
 import { Skeleton } from "../components/ui/Skeleton.jsx";
 import { useEmployees, useUpdateEmployee } from "../hooks/useEmployees.js";
+import { CAN_CHANGE_MANAGER } from "../lib/services/employees.js";
 import { Role, ROLE_LABELS } from "../lib/domain/enums.js";
 
 const ROLE_CHIP = {
@@ -49,7 +50,7 @@ function PersonRow({ person, isMe, managerName, managers, panel, busy, onOpen, o
         {line ? (
           <p className="m-0 truncate text-xs text-ink-muted">{line}</p>
         ) : (
-          <p className="m-0 text-xs font-semibold text-late">No manager: set one so their requests can be approved</p>
+          <p className="m-0 text-xs font-semibold text-late">No manager yet: HR approves their requests</p>
         )}
       </div>
       {/* Chips sit under the name on phones, on the right from sm up */}
@@ -59,7 +60,7 @@ function PersonRow({ person, isMe, managerName, managers, panel, busy, onOpen, o
       </div>
       {!isMe && !panel && (
         <div className="-mr-2 flex shrink-0">
-          {person.is_active && person.role === Role.EMPLOYEE && (
+          {CAN_CHANGE_MANAGER && person.is_active && person.role === Role.EMPLOYEE && (
             <Button variant="ghost" size="icon" aria-label={`Change ${person.name}'s manager`} onClick={() => onOpen(person, "manager")}>
               <UserCog className="size-4.5" aria-hidden="true" />
             </Button>

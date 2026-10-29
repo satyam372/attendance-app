@@ -65,14 +65,15 @@ attendance-app/
     ├── package.json, .env.example (API_URL, USE_MOCK_API), .postcssrc, .proxyrc
     └── src/
         ├── index.html, main.jsx, App.jsx (routes), styles.css (Tailwind 4 + design tokens, light/dark)
-        ├── lib/api.js             # fetch wrapper, credentials: "include", ApiError
+        ├── lib/api.js             # fetch wrapper, credentials: "include", ApiError (JSON, or a Blob such as a photo)
+        ├── lib/image.js           # browser-only: decode a photo and render the 256×256 crop
         ├── lib/services/          # one module per API area; picks real API or mock via USE_MOCK_API
         ├── lib/mock/              # in-browser mock API + seed data (until the backend endpoints exist)
         ├── lib/domain/            # enums, time zone helpers, business rules (+ node:test tests)
         ├── auth/AuthContext.jsx   # session: me / login / logout (clears the React Query cache)
         ├── theme/ThemeContext.jsx # system / light / dark preference
         ├── hooks/                 # useAttendance (React Query), useNow (live clock)
-        ├── components/            # AppLayout, ProtectedRoute, ChangePasswordForm, LoginIllustration, layout/ (Sidebar, BottomNav),
+        ├── components/            # AppLayout, ProtectedRoute, ChangePasswordForm, LoginIllustration, profile/ (PhotoEditor), layout/ (Sidebar, BottomNav),
         │                          # home/ (CheckInCard, TodayTimes, HoursChart, MonthStats),
         │                          # attendance/ (MonthCalendar, DayDetail, DailyLog), leave/ (LeaveForm, MyRequests, UpcomingHolidays),
         │                          # hr/ (HrTabs, TeamMemberCard, RequestCard, AddEmployeeForm),
@@ -80,7 +81,7 @@ attendance-app/
         └── pages/                 # Login, ChangePassword (/change-password, forced while must_change_password), EmployeeHome, Attendance, Leave, Profile, HrToday (/hr), HrSheet (/hr/sheet), HrApprovals (/hr/approvals), HrTeam (/hr/team), HrHolidays (/hr/holidays), NotFound
 ```
 
-Frontend commands (in `frontend/`): `npm run dev` (port 1234), `npm run build`, `npm test` (domain rules). Server data goes through React Query hooks in `src/hooks/`; navigation is a sidebar on PC (lg+) and a bottom tab bar on phones. Styling is **Tailwind only**: use the tokens in `styles.css` (`bg-surface`, `text-ink`, `text-accent-ink`, ...), not raw hex values.
+Frontend commands (in `frontend/`): `npm run dev` (port 1234), `npm run build`, `npm test` (domain rules). Server data goes through React Query hooks in `src/hooks/`; navigation is a sidebar on PC (lg+) and a bottom tab bar on phones. Styling is **Tailwind only**: use the tokens in `styles.css` (`bg-surface`, `text-ink`, `text-accent-ink`, ...), not raw hex values. Panels use the shared surface utilities instead of their own border/background, so the look of every panel is defined once in `styles.css`: `surface-card` (cards, sections), `surface-tile` (small repeated tiles: stats, team members, request cards; no blur), `surface-control` (boxed switchers, HR tabs), `surface-track` + `SlidingPill` (segmented choices), `surface-pill` (active nav item), `surface-inset` (confirms, notes, editors inside a card), `surface-sheet` (floating sign-in style cards), `glass-chrome` (sidebar, tab bar), `glass-button` (secondary/danger buttons), `glass-field` (inputs).
 
 ## Database schema
 
@@ -148,7 +149,7 @@ Design decisions:
 - Holidays: add/remove, upcoming/past.
 - Team: list, add employee (temporary password).
 
-Visual direction: new "SpeedIn" design (replaces the prototype's navy/sky look). Rubik for UI text, Michroma for the speed-lines logo, deep purple palette, light and dark themes. Tokens live in `frontend/src/styles.css`.
+Visual direction: **Liquid Glass** (like Apple macOS Tahoe / iOS 26) on the SpeedIn brand. Rubik for UI text, Michroma for the speed-lines logo, deep purple palette, light and dark themes. Glass is for navigation and cards; tables, forms and long lists stay readable. The app background (`bg-app`) is brand glows on one fixed layer. Materials are `--glass-*` tokens in `frontend/src/styles.css`. Blur only on large cards, controls and navigation, never on rows, cells, inputs or small repeated tiles (`surface-tile`), because many blurred elements make phones stutter. "Reduce transparency" (Profile → Appearance, `html.reduce-glass`), the system `prefers-reduced-transparency` setting and browsers without `backdrop-filter` all get opaque surfaces with the same layout. Text on glass must keep WCAG AA over the strongest glow, which is why light `--ink-muted` is `#4a5567`.
 
 ## Git, CI/CD and deployment
 

@@ -57,6 +57,7 @@ def get_team_day(session: Session, day: date) -> list[TeamMemberDay]:
             TeamMemberDay(
                 employee_id=employee.id,
                 name=employee.name,
+                photo_updated_at=employee.photo_updated_at,
                 status=_status(row, working_day, day, today),
                 work_mode=row.work_mode if row else None,
                 leave_half=row.leave_half if row else None,

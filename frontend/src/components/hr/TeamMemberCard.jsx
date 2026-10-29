@@ -23,7 +23,7 @@ export function TeamMemberCard({ member, now, isToday }) {
   ].filter(Boolean);
 
   return (
-    <li className="flex items-center gap-3 rounded-[18px] border border-line bg-surface p-3.5">
+    <li className="flex items-center gap-3 rounded-[18px] surface-tile p-3.5">
       <Avatar name={member.name} className="size-10 text-[13px]" />
       <div className="min-w-0 flex-1">
         <p className="m-0 truncate text-sm font-bold">{member.name}</p>

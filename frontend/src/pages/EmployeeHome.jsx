@@ -10,6 +10,7 @@ import { useNow } from "../hooks/useNow.js";
 import { useToday } from "../hooks/useAttendance.js";
 import { BUSINESS_RULES } from "../lib/domain/config.js";
 import { formatHm, formatLongDate, minutesInOfficeTz, toDateKey } from "../lib/domain/time.js";
+import { photoUrl } from "../lib/services/profile.js";
 
 function greeting(now) {
   const hour = Math.floor(minutesInOfficeTz(now) / 60);
@@ -34,7 +35,7 @@ export default function EmployeeHome() {
     <div className="flex flex-col gap-5 lg:gap-6">
       {/* Phone header: avatar and greeting */}
       <header className="flex items-center gap-3 lg:hidden">
-        <Avatar name={user.name} />
+        <Avatar name={user.name} src={photoUrl(user)} />
         <div>
           <p className="m-0 text-[13px] text-ink-muted">{greeting(now)}</p>
           <h1 className="m-0 text-[17px] font-bold">{user.name}</h1>

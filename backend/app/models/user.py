@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Self
 
 from pydantic import EmailStr, field_validator, model_validator
+from sqlalchemy import DateTime
 from sqlmodel import Field, SQLModel
 
 from app.models.base import TimestampMixin
@@ -35,6 +36,9 @@ class Employee(EmployeeBase, TimestampMixin, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     password_hash: str = Field(max_length=255)
     must_change_password: bool = Field(default=True)
+    # When the profile photo last changed; null without a photo. Part of the photo URL
+    # (?v=...), so browsers can cache a photo for good and still see a new one at once.
+    photo_updated_at: datetime | None = Field(default=None, sa_type=DateTime(timezone=True))
 
 
 class EmployeeCreate(EmployeeBase):
@@ -50,6 +54,7 @@ class EmployeePublic(EmployeeBase):
     id: uuid.UUID
     must_change_password: bool
     created_at: datetime
+    photo_updated_at: datetime | None = None
 
 
 class EmployeeUpdate(SQLModel):

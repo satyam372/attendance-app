@@ -78,7 +78,7 @@ export default function Attendance() {
               <div
                 key={label}
                 className={clsx(
-                  "flex-col-reverse gap-0.5 rounded-2xl border border-line bg-surface px-2.5 py-3 lg:flex-col lg:gap-1 lg:rounded-[18px] lg:px-4.5 lg:py-4",
+                  "flex-col-reverse gap-0.5 rounded-2xl surface-tile px-2.5 py-3 lg:flex-col lg:gap-1 lg:rounded-[18px] lg:px-4.5 lg:py-4",
                   pcOnly ? "hidden lg:flex" : "flex",
                 )}
               >
@@ -93,7 +93,7 @@ export default function Attendance() {
 
           {/* Calendar and daily log side by side only on wide screens (the design is 1440px); stacked below that */}
           <div className="flex flex-col gap-5 min-[1400px]:grid min-[1400px]:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] min-[1400px]:items-start">
-            <section aria-label="Calendar" className="flex flex-col gap-3 rounded-3xl border border-line bg-surface p-4 lg:p-5">
+            <section aria-label="Calendar" className="flex flex-col gap-3 rounded-3xl surface-card p-4 lg:p-5">
               <div className="lg:hidden">
                 <MonthSwitcher value={month} onChange={changeMonth} canGoNext={!isCurrentMonth} />
               </div>

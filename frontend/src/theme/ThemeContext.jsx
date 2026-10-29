@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 
 // Keep in sync with the inline script in index.html.
 const THEME_STORAGE_KEY = "speedin-theme";
+const GLASS_STORAGE_KEY = "speedin-reduce-transparency";
 const PREFERENCES = ["system", "light", "dark"];
 
 const ThemeContext = createContext(null);
@@ -15,6 +16,14 @@ function readPreference() {
   }
 }
 
+function readReduceTransparency() {
+  try {
+    return localStorage.getItem(GLASS_STORAGE_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
 function systemPrefersDark() {
   return window.matchMedia("(prefers-color-scheme: dark)").matches;
 }
@@ -22,6 +31,8 @@ function systemPrefersDark() {
 export function ThemeProvider({ children }) {
   const [preference, setPreference] = useState(readPreference);
   const [systemDark, setSystemDark] = useState(systemPrefersDark);
+  // Liquid Glass is on by default; this makes every surface opaque (styles.css: html.reduce-glass)
+  const [reduceTransparency, setReduceTransparency] = useState(readReduceTransparency);
 
   // Follow OS changes while the preference is "system".
   useEffect(() => {
@@ -37,6 +48,19 @@ export function ThemeProvider({ children }) {
     document.documentElement.classList.toggle("dark", resolved === "dark");
   }, [resolved]);
 
+  useEffect(() => {
+    document.documentElement.classList.toggle("reduce-glass", reduceTransparency);
+  }, [reduceTransparency]);
+
+  const chooseReduceTransparency = useCallback((next) => {
+    setReduceTransparency(next);
+    try {
+      localStorage.setItem(GLASS_STORAGE_KEY, next ? "1" : "0");
+    } catch {
+      // Storage unavailable: applies for this visit only.
+    }
+  }, []);
+
   const choose = useCallback((next) => {
     setPreference(next);
     try {
@@ -46,7 +70,10 @@ export function ThemeProvider({ children }) {
     }
   }, []);
 
-  const value = useMemo(() => ({ preference, resolved, setPreference: choose }), [preference, resolved, choose]);
+  const value = useMemo(
+    () => ({ preference, resolved, setPreference: choose, reduceTransparency, setReduceTransparency: chooseReduceTransparency }),
+    [preference, resolved, choose, reduceTransparency, chooseReduceTransparency],
+  );
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
 

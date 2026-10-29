@@ -7,6 +7,7 @@ from app.api.routes import (
     employees,
     health,
     holidays,
+    photos,
     requests,
 )
 
@@ -23,3 +24,4 @@ app.include_router(attendance.router, prefix="/api")
 app.include_router(holidays.router, prefix="/api")
 app.include_router(requests.router, prefix="/api")
 app.include_router(dashboard.router, prefix="/api")
+app.include_router(photos.router, prefix="/api")

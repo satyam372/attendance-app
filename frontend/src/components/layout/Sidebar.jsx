@@ -10,14 +10,16 @@ import { Avatar } from "../ui/Avatar.jsx";
 import { Button } from "../ui/Button.jsx";
 import { Wordmark } from "../ui/Wordmark.jsx";
 import { itemsFor } from "./navItems.js";
+import { photoUrl } from "../../lib/services/profile.js";
 
-/** PC navigation (lg and up), from the Desktop Dashboard artboard. */
+/** PC navigation (lg and up): a floating glass panel beside the content. */
 export function Sidebar() {
   const { user, logout } = useAuth();
   const [signingOut, setSigningOut] = useState(false);
 
   return (
-    <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col gap-7 border-r border-line bg-surface px-4 py-7 lg:flex">
+    <aside className="sticky top-0 hidden h-dvh w-[17rem] shrink-0 p-3 lg:block">
+      <div className="glass-chrome flex h-full flex-col gap-7 rounded-[28px] px-4 py-6">
       <Link to="/" aria-label="SpeedIn home" className="self-start rounded-lg px-2">
         <Wordmark className="text-lg" />
       </Link>
@@ -31,7 +33,7 @@ export function Sidebar() {
             className={({ isActive }) =>
               clsx(
                 "flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm transition",
-                isActive ? "bg-accent-soft font-bold text-accent-ink" : "font-semibold text-ink-soft hover:bg-field hover:text-ink",
+                isActive ? "surface-pill font-bold text-accent-ink" : "font-semibold text-ink-soft hover:bg-(--glass-hover) hover:text-ink",
               )
             }
           >
@@ -46,9 +48,9 @@ export function Sidebar() {
           <span className="text-xs font-semibold text-ink-muted">Theme</span>
           <ThemeToggle />
         </div>
-        <div className="flex items-center gap-2.5 rounded-2xl border border-line bg-field p-3">
+        <div className="flex items-center gap-2.5 rounded-2xl surface-inset p-3">
           <Link to="/profile" className="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg" aria-label={`Profile: ${user.name}`}>
-            <Avatar name={user.name} className="size-9.5 text-[13px]" />
+            <Avatar name={user.name} src={photoUrl(user)} className="size-9.5 text-[13px]" />
             <span className="min-w-0">
               <span className="block truncate text-sm font-bold text-ink">{user.name}</span>
               <span className="block text-xs text-ink-muted">{ROLE_LABELS[user.role]}</span>
@@ -68,6 +70,7 @@ export function Sidebar() {
             {!signingOut && <LogOut className="size-4.5" strokeWidth={2} aria-hidden="true" />}
           </Button>
         </div>
+      </div>
       </div>
     </aside>
   );

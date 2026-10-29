@@ -9,7 +9,7 @@ export function UpcomingHolidays({ limit = 5 }) {
   const upcoming = (data ?? []).filter((h) => h.holiday_date >= todayKey).slice(0, limit);
 
   return (
-    <section aria-labelledby="holidays-heading" className="flex flex-col gap-3 rounded-3xl border border-line bg-surface p-5">
+    <section aria-labelledby="holidays-heading" className="flex flex-col gap-3 rounded-3xl surface-card p-5">
       <h2 id="holidays-heading" className="m-0 text-base font-bold">
         Upcoming holidays
       </h2>

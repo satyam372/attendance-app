@@ -86,6 +86,27 @@
   --ill-pill: rgb(255 255 255 / 0.94);
   --ill-pill-stroke: rgb(46 29 92 / 0.12);
   --ill-check: #ffffff;
+
+  /* Liquid Glass materials (light). Translucent fills over the brand glows of bg-app; the blur
+     and the bright top edge make them read as glass. Opaque versions are in the fallbacks below. */
+  --glass-card: rgb(255 255 255 / 0.62);
+  --glass-tile: rgb(255 255 255 / 0.74);
+  --glass-chrome: rgb(255 255 255 / 0.56);
+  --glass-sheet: rgb(255 255 255 / 0.72);
+  --glass-control: rgb(255 255 255 / 0.55);
+  --glass-control-hover: rgb(255 255 255 / 0.78);
+  --glass-hover: rgb(255 255 255 / 0.5);
+  --glass-pill: rgb(255 255 255 / 0.95);
+  --glass-track: rgb(255 255 255 / 0.42); /* a light frosted well; the inner shadow draws the groove */
+  --glass-inset: rgb(73 48 133 / 0.06);
+  --glass-field: rgb(255 255 255 / 0.72);
+  --glass-border: rgb(255 255 255 / 0.75);
+  --glass-edge: rgb(46 29 92 / 0.1);
+  --glass-highlight: inset 0 1px 0 rgb(255 255 255 / 0.95);
+  --glass-shadow: 0 1px 2px rgb(46 29 92 / 0.06), 0 10px 30px rgb(46 29 92 / 0.07);
+  --glass-shadow-lg: 0 2px 6px rgb(46 29 92 / 0.06), 0 24px 60px rgb(46 29 92 / 0.14);
+  --glass-blur: blur(16px) saturate(170%);
+  --glass-blur-strong: blur(26px) saturate(185%);
 }
 
 .dark {
@@ -161,18 +182,87 @@
   --ill-pill: rgb(18 14 44 / 0.9);
   --ill-pill-stroke: rgb(255 255 255 / 0.18);
   --ill-check: #ffffff;
+
+  /* App background glows behind the glass (dark) */
+  --app-glow-1: rgb(98 70 230 / 0.5);
+  --app-glow-2: rgb(16 150 140 / 0.34);
+  --app-glow-3: rgb(124 84 224 / 0.38);
+  --app-glow-4: rgb(40 120 210 / 0.24);
+
+  /* Liquid Glass materials (dark) */
+  --glass-card: rgb(30 24 64 / 0.52);
+  --glass-tile: rgb(30 24 64 / 0.66);
+  --glass-chrome: rgb(26 21 56 / 0.5);
+  --glass-sheet: rgb(24 19 52 / 0.66);
+  --glass-control: rgb(255 255 255 / 0.07);
+  --glass-control-hover: rgb(255 255 255 / 0.13);
+  --glass-hover: rgb(255 255 255 / 0.07);
+  --glass-pill: rgb(255 255 255 / 0.11); /* lighter would drop the accent text below 4.5:1 */
+  --glass-track: rgb(0 0 0 / 0.22);
+  --glass-inset: rgb(255 255 255 / 0.05);
+  --glass-field: rgb(255 255 255 / 0.06);
+  --glass-border: rgb(255 255 255 / 0.13);
+  --glass-edge: rgb(0 0 0 / 0.3);
+  --glass-highlight: inset 0 1px 0 rgb(255 255 255 / 0.14);
+  --glass-shadow: 0 1px 2px rgb(0 0 0 / 0.25), 0 12px 32px rgb(0 0 0 / 0.3);
+  --glass-shadow-lg: 0 2px 6px rgb(0 0 0 / 0.3), 0 28px 70px rgb(0 0 0 / 0.45);
+}
+
+/* Reduce transparency: the system setting, the in-app switch (html.reduce-glass) and browsers
+   without backdrop-filter get opaque surfaces with the same layout. */
+html.reduce-glass {
+    --glass-card: #ffffff; --glass-tile: #ffffff; --glass-chrome: #ffffff; --glass-sheet: #ffffff; --glass-control: #ffffff;
+    --glass-control-hover: #f8fafc; --glass-hover: #f1f5f9; --glass-pill: #ffffff; --glass-track: #eef0f3;
+    --glass-inset: #f4f2f9; --glass-field: #ffffff; --glass-border: #e2e8f0;
+    --glass-blur: none; --glass-blur-strong: none;
+}
+html.reduce-glass.dark {
+    --glass-card: #141030; --glass-tile: #141030; --glass-chrome: #120e2c; --glass-sheet: #141030; --glass-control: #1b1638;
+    --glass-control-hover: #231d45; --glass-hover: #1b1638; --glass-pill: #2a2350; --glass-track: #0c0a1e;
+    --glass-inset: #1b1638; --glass-field: #19152f; --glass-border: rgb(255 255 255 / 0.1);
+}
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --glass-card: #ffffff; --glass-tile: #ffffff; --glass-chrome: #ffffff; --glass-sheet: #ffffff; --glass-control: #ffffff;
+    --glass-control-hover: #f8fafc; --glass-hover: #f1f5f9; --glass-pill: #ffffff; --glass-track: #eef0f3;
+    --glass-inset: #f4f2f9; --glass-field: #ffffff; --glass-border: #e2e8f0;
+    --glass-blur: none; --glass-blur-strong: none;
+  }
+  :root.dark {
+    --glass-card: #141030; --glass-tile: #141030; --glass-chrome: #120e2c; --glass-sheet: #141030; --glass-control: #1b1638;
+    --glass-control-hover: #231d45; --glass-hover: #1b1638; --glass-pill: #2a2350; --glass-track: #0c0a1e;
+    --glass-inset: #1b1638; --glass-field: #19152f; --glass-border: rgb(255 255 255 / 0.1);
+  }
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root {
+    --glass-card: #ffffff; --glass-tile: #ffffff; --glass-chrome: #ffffff; --glass-sheet: #ffffff; --glass-control: #ffffff;
+    --glass-control-hover: #f8fafc; --glass-hover: #f1f5f9; --glass-pill: #ffffff; --glass-track: #eef0f3;
+    --glass-inset: #f4f2f9; --glass-field: #ffffff; --glass-border: #e2e8f0;
+    --glass-blur: none; --glass-blur-strong: none;
+  }
+  :root.dark {
+    --glass-card: #141030; --glass-tile: #141030; --glass-chrome: #120e2c; --glass-sheet: #141030; --glass-control: #1b1638;
+    --glass-control-hover: #231d45; --glass-hover: #1b1638; --glass-pill: #2a2350; --glass-track: #0c0a1e;
+    --glass-inset: #1b1638; --glass-field: #19152f; --glass-border: rgb(255 255 255 / 0.1);
+  }
 }
 
 /* App screens (inside AppLayout) use the Home/Dashboard artboard palette in light mode.
    The login keeps its own lavender light theme; dark mode is shared. */
 html:not(.dark) .theme-app {
-  --canvas: #eff1ed;
+  /* Lavender-grey base and brand glows behind the Liquid Glass panels */
+  --canvas: #eeecf6;
+  --app-glow-1: rgb(123 97 255 / 0.34);
+  --app-glow-2: rgb(23 183 154 / 0.2);
+  --app-glow-3: rgb(170 130 255 / 0.3);
+  --app-glow-4: rgb(59 196 234 / 0.16);
   --surface: #ffffff;
   --field: #f8fafc;
   --ink: #001e33;
   --ink-soft: #334155;
-  /* Artboard grey was #64748b (4.2:1 on the canvas); #566476 keeps the look and passes AA (>=4.8:1 everywhere) */
-  --ink-muted: #566476;
+  /* Artboard grey was #64748b; on glass over the brightest glow it needs to be darker to keep AA (>=4.5:1) */
+  --ink-muted: #4a5567;
   --placeholder: #94a3b8;
   --line: #e2e8f0;
   --line-strong: #cbd5e1;
@@ -310,6 +400,108 @@ html:not(.dark) .theme-app {
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-6px); }
   }
+}
+
+/* ---------- Surfaces (Liquid Glass) ----------
+   Every panel uses one of these materials instead of its own border/background, so the look of all
+   cards, controls and inline panels is defined here once. Radius and padding stay at each use.
+   Blur is only on cards, navigation and floating controls, never on rows, cells or inputs (it is
+   expensive on phones). Values come from the --glass-* tokens, so reduce-transparency swaps them. */
+
+/* Cards and sections */
+@utility surface-card {
+  border-width: 1px;
+  border-color: var(--glass-border);
+  background-color: var(--glass-card);
+  box-shadow: var(--glass-highlight), var(--glass-shadow);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+}
+
+/* Small repeated tiles (stat counts, team members, request cards in a grid): the card look without
+   the blur, with a slightly denser fill. Many blurred tiles on one screen make scrolling stutter on
+   phones; a page usually has only a few large surface-cards. */
+@utility surface-tile {
+  border-width: 1px;
+  border-color: var(--glass-border);
+  background-color: var(--glass-tile);
+  box-shadow: var(--glass-highlight), var(--glass-shadow);
+}
+
+/* Small boxed controls: day/week/month switchers */
+@utility surface-control {
+  border-width: 1px;
+  border-color: var(--glass-border);
+  background-color: var(--glass-control);
+  box-shadow: var(--glass-highlight), var(--glass-shadow);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+}
+
+/* Tracks behind segmented choices (Office/Home, theme, filters): a slightly recessed groove */
+@utility surface-track {
+  background-color: var(--glass-track);
+  box-shadow: inset 0 1px 2px var(--glass-edge);
+}
+
+/* The selected choice in a track, and the active navigation item: a bright glass pill */
+@utility surface-pill {
+  background-color: var(--glass-pill);
+  box-shadow: var(--glass-highlight), 0 1px 3px var(--glass-edge);
+}
+
+/* Inline panels inside a card: confirms, notes, editors, quoted reasons */
+@utility surface-inset {
+  background-color: var(--glass-inset);
+}
+
+/* Floating sign-in style cards (change password) */
+@utility surface-sheet {
+  border-width: 1px;
+  border-color: var(--glass-border);
+  background-color: var(--glass-sheet);
+  box-shadow: var(--glass-highlight), var(--glass-shadow-lg);
+  -webkit-backdrop-filter: var(--glass-blur-strong);
+  backdrop-filter: var(--glass-blur-strong);
+}
+
+/* Navigation chrome: the floating sidebar and the phone tab bar */
+@utility glass-chrome {
+  border-width: 1px;
+  border-color: var(--glass-border);
+  background-color: var(--glass-chrome);
+  box-shadow: var(--glass-highlight), var(--glass-shadow-lg);
+  -webkit-backdrop-filter: var(--glass-blur-strong);
+  backdrop-filter: var(--glass-blur-strong);
+}
+
+/* Secondary buttons and other glass pills */
+@utility glass-button {
+  border-width: 1px;
+  border-color: var(--glass-border);
+  background-color: var(--glass-control);
+  box-shadow: var(--glass-highlight), 0 1px 2px var(--glass-edge);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  &:hover {
+    background-color: var(--glass-control-hover);
+  }
+}
+
+/* Inputs: translucent but not blurred, so typing stays fast and text stays crisp */
+@utility glass-field {
+  background-color: var(--glass-field);
+}
+
+/* App background: brand glows the glass sits on (purple, teal, lavender, sky). Sized to the
+   viewport so phones and PCs both get colour behind their panels. */
+@utility bg-app {
+  background-color: var(--canvas);
+  background-image:
+    radial-gradient(48vw 46vh at 14% 6%, var(--app-glow-1), transparent 70%),
+    radial-gradient(42vw 42vh at 92% 20%, var(--app-glow-2), transparent 70%),
+    radial-gradient(50vw 46vh at 76% 94%, var(--app-glow-3), transparent 70%),
+    radial-gradient(40vw 40vh at 22% 86%, var(--app-glow-4), transparent 70%);
 }
 
 /* Login page background: 44px grid over layered glows (from the design canvas). */

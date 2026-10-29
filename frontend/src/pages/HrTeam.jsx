@@ -76,7 +76,7 @@ function PersonRow({ person, isMe, managerName, managers, panel, busy, onOpen, o
         </div>
       )}
       {panel === "deactivate" && (
-        <div role="group" aria-label={`Deactivate ${person.name}?`} className="order-last flex w-full flex-wrap items-center gap-x-3 gap-y-2 rounded-xl bg-field px-3.5 py-2.5">
+        <div role="group" aria-label={`Deactivate ${person.name}?`} className="order-last flex w-full flex-wrap items-center gap-x-3 gap-y-2 rounded-xl surface-inset px-3.5 py-2.5">
           <p className="m-0 min-w-0 flex-1 basis-52 text-sm text-ink-soft">
             Deactivate <strong className="text-ink">{person.name}</strong>? They can&rsquo;t sign in until you reactivate them. Their attendance history stays.
           </p>
@@ -97,7 +97,7 @@ function PersonRow({ person, isMe, managerName, managers, panel, busy, onOpen, o
             e.preventDefault();
             onSaveManager(person, managerId);
           }}
-          className="order-last flex w-full flex-wrap items-end gap-x-3 gap-y-2 rounded-xl bg-field px-3.5 py-3"
+          className="order-last flex w-full flex-wrap items-end gap-x-3 gap-y-2 rounded-xl surface-inset px-3.5 py-3"
         >
           <SelectField label="Reports to" value={managerId} onChange={(e) => setManagerId(e.target.value)} className="min-w-0 flex-1 basis-52">
             {!managerId && <option value="">Choose a manager</option>}
@@ -177,7 +177,7 @@ export default function HrTeam() {
       </header>
 
       <div className="flex flex-col gap-5 lg:grid lg:grid-cols-[1fr_minmax(320px,380px)] lg:items-start">
-        <section aria-labelledby="people-heading" className="flex min-w-0 flex-col gap-3.5 rounded-3xl border border-line bg-surface p-4 sm:p-5">
+        <section aria-labelledby="people-heading" className="flex min-w-0 flex-col gap-3.5 rounded-3xl surface-card p-4 sm:p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 id="people-heading" className="m-0 text-base font-bold">
               Everyone
@@ -190,14 +190,14 @@ export default function HrTeam() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search name or email"
-                className="h-10 w-full rounded-xl border border-line-strong bg-surface pr-3 pl-9 text-sm text-ink placeholder:text-placeholder focus:border-focus focus:ring-4 focus:ring-focus-ring focus:outline-none"
+                className="h-10 w-full rounded-xl border border-line-strong glass-field pr-3 pl-9 text-sm text-ink placeholder:text-placeholder focus:border-focus focus:ring-4 focus:ring-focus-ring focus:outline-none"
               />
             </label>
           </div>
 
           <ErrorAlert>{update.error?.message}</ErrorAlert>
           {notice && (
-            <p ref={noticeRef} tabIndex={-1} role="status" className="m-0 rounded-xl bg-field px-3.5 py-2.5 text-sm font-semibold text-ink-soft focus:outline-none">
+            <p ref={noticeRef} tabIndex={-1} role="status" className="m-0 rounded-xl surface-inset px-3.5 py-2.5 text-sm font-semibold text-ink-soft focus:outline-none">
               {notice}
             </p>
           )}
@@ -240,7 +240,7 @@ export default function HrTeam() {
           )}
         </section>
 
-        <section aria-labelledby="add-employee-heading" className="flex flex-col gap-4 rounded-3xl border border-line bg-surface p-5">
+        <section aria-labelledby="add-employee-heading" className="flex flex-col gap-4 rounded-3xl surface-card p-5">
           <h2 id="add-employee-heading" className="m-0 text-base font-bold">
             Add employee
           </h2>

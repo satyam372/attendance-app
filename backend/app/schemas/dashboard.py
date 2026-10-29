@@ -29,6 +29,7 @@ class TeamMemberDay(SQLModel):
 
     employee_id: uuid.UUID
     name: str
+    photo_updated_at: datetime | None = None  # null without a photo; the frontend builds the URL
     status: DayStatus  # OFFICE, WFH, HYBRID, LEAVE, HALF_DAY_LEAVE, HOLIDAY, WEEKEND,
     #                    NOT_CHECKED_IN (today) or ABSENT (past day)
     work_mode: WorkMode | None = None  # e.g. an approved WFH that is not checked in yet

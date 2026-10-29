@@ -68,7 +68,7 @@ export function AddEmployeeForm({ managers = [] }) {
           Account created for {created.employee.name}
         </p>
         <p className="m-0 text-sm text-ink-soft">Share these details with them privately (not in a group chat). They&rsquo;ll be asked to change the password.</p>
-        <dl className="m-0 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 rounded-xl bg-field px-4 py-3 text-sm">
+        <dl className="m-0 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 rounded-xl surface-inset px-4 py-3 text-sm">
           <dt className="text-ink-muted">Email</dt>
           <dd className="m-0 font-semibold break-all">{created.employee.email}</dd>
           <dt className="text-ink-muted">Temporary password</dt>

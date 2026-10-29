@@ -16,7 +16,7 @@ export function DayDetail({ dateKey, day, now, isToday }) {
   const minutes = day?.worked_minutes ?? (running ? minutesBetween(day.in_time, now) : null);
 
   return (
-    <section aria-label="Selected day" className="flex flex-col gap-3.5 rounded-[22px] border border-line bg-surface p-4">
+    <section aria-label="Selected day" className="flex flex-col gap-3.5 rounded-[22px] surface-card p-4">
       <div className="flex items-center justify-between gap-3">
         <div>
           <h2 className="m-0 text-[15px] font-bold">{dayTitle(dateKey)}</h2>

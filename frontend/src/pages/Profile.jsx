@@ -43,7 +43,7 @@ export default function Profile() {
       <Card>
         <fieldset className="m-0 border-0 p-0">
           <legend className="mb-3 p-0 text-base font-bold">Appearance</legend>
-          <div className="grid grid-cols-3 gap-1 rounded-2xl bg-field p-1">
+          <div className="grid grid-cols-3 gap-1 rounded-2xl surface-track p-1">
             {THEMES.map(({ value, label, icon: Icon }) => (
               <label
                 key={value}

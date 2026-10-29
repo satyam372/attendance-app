@@ -73,7 +73,7 @@ export function MyRequests() {
   const closedHolidays = new Set((holidays.data ?? []).filter((h) => !h.is_optional).map((h) => h.holiday_date));
 
   return (
-    <section aria-labelledby="my-requests-heading" className="flex flex-col gap-3 rounded-3xl border border-line bg-surface p-5">
+    <section aria-labelledby="my-requests-heading" className="flex flex-col gap-3 rounded-3xl surface-card p-5">
       <h2 id="my-requests-heading" className="m-0 text-base font-bold">
         My requests
       </h2>

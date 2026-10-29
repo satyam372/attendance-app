@@ -312,6 +312,43 @@ html:not(.dark) .theme-app {
   }
 }
 
+/* ---------- Surfaces ----------
+   Every panel in the app uses one of these materials instead of its own border/background, so the
+   look of all cards, controls and inline panels is defined here once. Radius and padding stay at
+   each use. They read the raw tokens (--surface, not --color-surface) so the light app palette set on
+   .theme-app applies, exactly like the bg-surface / border-line utilities they replace. */
+
+/* Cards and sections */
+@utility surface-card {
+  border-width: 1px;
+  border-color: var(--line);
+  background-color: var(--surface);
+}
+
+/* Small boxed controls: day/week/month switchers */
+@utility surface-control {
+  border-width: 1px;
+  border-color: var(--line);
+  background-color: var(--surface);
+}
+
+/* Tracks behind segmented choices (Office/Home, theme, filters) */
+@utility surface-track {
+  background-color: var(--field);
+}
+
+/* Inline panels inside a card: confirms, notes, editors, quoted reasons */
+@utility surface-inset {
+  background-color: var(--field);
+}
+
+/* Floating sign-in style cards (change password) */
+@utility surface-sheet {
+  border-width: 1px;
+  border-color: var(--line);
+  background-color: var(--surface);
+}
+
 /* Login page background: 44px grid over layered glows (from the design canvas). */
 @utility bg-login {
   background-color: var(--canvas);

@@ -58,7 +58,7 @@ export function PendingRequestCard({ request, closedHolidays, mode = "decide", a
   const choice = decide.variables?.status;
 
   return (
-    <li className="flex flex-col gap-3.5 rounded-[20px] border border-line bg-surface p-4 sm:p-5">
+    <li className="flex flex-col gap-3.5 rounded-[20px] surface-card p-4 sm:p-5">
       <div className="flex items-start gap-3">
         <Avatar name={request.employee_name} className="size-10 text-[13px]" />
         <div className="min-w-0 flex-1">
@@ -78,14 +78,14 @@ export function PendingRequestCard({ request, closedHolidays, mode = "decide", a
         <span className="font-semibold text-ink">{requestDates(request)}</span>
         <span>· {fmtDays(days)} {days === 1 ? "working day" : "working days"}</span>
       </p>
-      {request.reason && <p className="m-0 rounded-xl bg-field px-3.5 py-2.5 text-sm text-ink-soft">&ldquo;{request.reason}&rdquo;</p>}
+      {request.reason && <p className="m-0 rounded-xl surface-inset px-3.5 py-2.5 text-sm text-ink-soft">&ldquo;{request.reason}&rdquo;</p>}
       <p className="m-0 text-xs text-ink-muted">
         {appliedText(request.created_at)}
         {appliedLate && " · less than a day in advance"}
       </p>
 
       <ErrorAlert>{decide.error?.message}</ErrorAlert>
-      {mode === "own" && <p className="m-0 rounded-xl bg-field px-3.5 py-2.5 text-sm text-ink-soft">Your own request: another HR person decides it.</p>}
+      {mode === "own" && <p className="m-0 rounded-xl surface-inset px-3.5 py-2.5 text-sm text-ink-soft">Your own request: another HR person decides it.</p>}
       {mode === "override" && (
         <p className="m-0 flex items-center gap-2 text-sm font-semibold text-ink-soft">
           <Hourglass className="size-4 text-pending" aria-hidden="true" />
@@ -98,7 +98,7 @@ export function PendingRequestCard({ request, closedHolidays, mode = "decide", a
         </Button>
       )}
       {mode === "override" && overriding && (
-        <p className="m-0 rounded-xl bg-field px-3.5 py-2.5 text-sm text-ink-soft">
+        <p className="m-0 rounded-xl surface-inset px-3.5 py-2.5 text-sm text-ink-soft">
           Normally {approverName} decides. Your decision is recorded as an HR override.
         </p>
       )}

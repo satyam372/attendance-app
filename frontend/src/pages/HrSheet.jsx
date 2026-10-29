@@ -90,7 +90,7 @@ export default function HrSheet() {
             {rows.length ? ` · ${rows.length} ${rows.length === 1 ? "person" : "people"}` : ""}
           </p>
         </div>
-        <div className="flex items-center gap-1 rounded-xl border border-line bg-surface p-1">
+        <div className="flex items-center gap-1 rounded-xl surface-control p-1">
           <button type="button" onClick={() => setMonday(addDays(monday, -7))} aria-label="Previous week" className="grid size-10 cursor-pointer place-items-center rounded-lg hover:bg-field">
             <ChevronLeft className="size-4.5" aria-hidden="true" />
           </button>
@@ -124,7 +124,7 @@ export default function HrSheet() {
       ) : loading ? (
         <Skeleton className="h-80 w-full" />
       ) : (
-        <div className="overflow-hidden rounded-3xl border border-line bg-surface">
+        <div className="overflow-hidden rounded-3xl surface-card">
           <div className="overflow-x-auto" tabIndex={0} role="region" aria-labelledby="sheet-caption">
             <table className="w-full min-w-[760px] table-fixed border-collapse text-left text-sm">
               <caption id="sheet-caption" className="sr-only">

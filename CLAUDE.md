@@ -80,7 +80,7 @@ attendance-app/
         └── pages/                 # Login, ChangePassword (/change-password, forced while must_change_password), EmployeeHome, Attendance, Leave, Profile, HrToday (/hr), HrSheet (/hr/sheet), HrApprovals (/hr/approvals), HrTeam (/hr/team), HrHolidays (/hr/holidays), NotFound
 ```
 
-Frontend commands (in `frontend/`): `npm run dev` (port 1234), `npm run build`, `npm test` (domain rules). Server data goes through React Query hooks in `src/hooks/`; navigation is a sidebar on PC (lg+) and a bottom tab bar on phones. Styling is **Tailwind only**: use the tokens in `styles.css` (`bg-surface`, `text-ink`, `text-accent-ink`, ...), not raw hex values.
+Frontend commands (in `frontend/`): `npm run dev` (port 1234), `npm run build`, `npm test` (domain rules). Server data goes through React Query hooks in `src/hooks/`; navigation is a sidebar on PC (lg+) and a bottom tab bar on phones. Styling is **Tailwind only**: use the tokens in `styles.css` (`bg-surface`, `text-ink`, `text-accent-ink`, ...), not raw hex values. Panels use the shared surface utilities instead of their own border/background: `surface-card` (cards, sections), `surface-control` (small boxed switchers), `surface-track` (behind segmented choices), `surface-inset` (confirms, notes and editors inside a card) and `surface-sheet` (floating sign-in style cards). The look of every panel is defined once there.
 
 ## Database schema
 

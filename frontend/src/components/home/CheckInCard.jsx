@@ -39,7 +39,7 @@ export function CheckInCard({ today, isLoading, isError, onRetry, now }) {
 
   if (isLoading) {
     return (
-      <section aria-label="Today" className="flex flex-col items-center gap-5 rounded-[28px] border border-line bg-surface px-5 py-7">
+      <section aria-label="Today" className="flex flex-col items-center gap-5 rounded-[28px] surface-card px-5 py-7">
         <Skeleton className="h-12 w-44" />
         <Skeleton className="size-42 rounded-full" />
         <Skeleton className="h-8 w-56" />
@@ -48,7 +48,7 @@ export function CheckInCard({ today, isLoading, isError, onRetry, now }) {
   }
   if (isError || !today) {
     return (
-      <section aria-label="Today" className="flex flex-col gap-4 rounded-[28px] border border-line bg-surface p-6">
+      <section aria-label="Today" className="flex flex-col gap-4 rounded-[28px] surface-card p-6">
         <ErrorAlert>Couldn&rsquo;t load today&rsquo;s attendance.</ErrorAlert>
         <Button variant="secondary" onClick={onRetry} className="self-start">
           Try again
@@ -128,7 +128,7 @@ export function CheckInCard({ today, isLoading, isError, onRetry, now }) {
   }
 
   return (
-    <section aria-label="Today" className="flex flex-col items-center gap-5 rounded-[28px] border border-line bg-surface px-5 py-6 lg:px-7 lg:py-7">
+    <section aria-label="Today" className="flex flex-col items-center gap-5 rounded-[28px] surface-card px-5 py-6 lg:px-7 lg:py-7">
       <div className="flex flex-col items-center gap-1">
         <p className="m-0 hidden text-[13px] font-semibold text-ink-muted lg:block">Current time</p>
         <p className="m-0 text-[44px] leading-none font-extrabold tracking-[-0.03em] tabular-nums" aria-label={`Time ${clock.time} ${clock.period}`}>
@@ -140,7 +140,7 @@ export function CheckInCard({ today, isLoading, isError, onRetry, now }) {
       {phase === "in" && !presetMode && (
         <fieldset className="m-0 w-full max-w-xs border-0 p-0">
           <legend className="mb-2 w-full p-0 text-center text-[13px] font-medium text-ink-muted">Where are you working today?</legend>
-          <div className="grid grid-cols-2 gap-1 rounded-2xl bg-field p-1">
+          <div className="grid grid-cols-2 gap-1 rounded-2xl surface-track p-1">
             {MODES.map(({ value, label, icon: Icon }) => (
               <label
                 key={value}

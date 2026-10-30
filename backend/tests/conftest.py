@@ -12,7 +12,10 @@ os.environ["ENVIRONMENT"] = "local"
 os.environ["JWT_SECRET"] = "test-secret-not-used-anywhere-else-0123456789"
 os.environ["OFFICE_LAT"] = "18.5590"
 os.environ["OFFICE_LNG"] = "73.7868"
+# Never send real email from a test, even when backend/.env has real mail settings
+os.environ["MAIL_DISABLED"] = "true"
 
+import httpx
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.pool import StaticPool
@@ -25,10 +28,26 @@ from app.core.security import create_access_token
 from app.main import app as fastapi_app
 from app.models.enums import Role
 from app.models.user import Employee
+from app.services import mail
 
 get_settings.cache_clear()
 if "supabase.com" in get_settings().database_url:
     raise RuntimeError("Tests must never run against Supabase; DATABASE_URL points there.")
+
+
+@pytest.fixture(autouse=True)
+def no_real_email(monkeypatch):
+    """Second guard: any send fails as if the network were down. Tests that check emails switch
+    mail on and swap in their own fakes (tests/test_welcome_email.py)."""
+
+    def blocked(request):
+        raise httpx.ConnectError("Network disabled in tests", request=request)
+
+    def no_smtp(*args, **kwargs):
+        raise OSError("Network disabled in tests")
+
+    monkeypatch.setattr(mail, "http_transport", httpx.MockTransport(blocked))
+    monkeypatch.setattr(mail, "smtp_factory", no_smtp)
 
 
 @pytest.fixture

@@ -129,6 +129,7 @@ Design decisions:
 - JWT (PyJWT, HS256) in an **httpOnly cookie**; frontend uses `credentials: "include"`. Bearer header fallback for tests/tools.
 - Endpoints planned: POST /api/auth/login, POST /api/auth/logout, GET /api/auth/me.
 - JWT_SECRET must be 32+ random chars outside local.
+- Welcome email: when HR adds an employee, the login details (app link, email, temporary password) are emailed to them (`services/welcome.py`, template in `services/email_templates.py`). HR can resend from People, which sets a new temporary password. Sending goes through `services/mail.py` (`MAIL_PROVIDER=resend` with `RESEND_API_KEY`, or `smtp`), during the request (Vercel can cut background tasks), and never undoes the action: the result is SENT, FAILED or SKIPPED (mail off) and every attempt is in `email_log` without the body. Tests can never send real mail (`MAIL_DISABLED` plus blocked transports in `tests/conftest.py`).
 - Frontend and backend share one domain (Vercel services), so the auth cookie is first-party: no custom domain needed, `COOKIE_DOMAIN` stays empty, SameSite=lax, Secure=true in production. No CORS needed in production (same origin); `CORS_ORIGINS` only matters for local tools.
 
 ## Features (from the prototype)
@@ -147,7 +148,7 @@ Design decisions:
 - Attendance sheet: weekly grid (Mon to Fri), status + times per cell, edit any entry.
 - Requests: pending leave + extra WFH with approve/reject; decided history.
 - Holidays: add/remove, upcoming/past.
-- Team: list, add employee (temporary password).
+- Team: list, add employee (temporary password, emailed to them), resend login details.
 
 Visual direction: **Liquid Glass** (like Apple macOS Tahoe / iOS 26) on the SpeedIn brand. Rubik for UI text, Michroma for the speed-lines logo, deep purple palette, light and dark themes. Glass is for navigation and cards; tables, forms and long lists stay readable. The app background (`bg-app`) is brand glows on one fixed layer. Materials are `--glass-*` tokens in `frontend/src/styles.css`. Blur only on large cards, controls and navigation, never on rows, cells, inputs or small repeated tiles (`surface-tile`), because many blurred elements make phones stutter. "Reduce transparency" (Profile → Appearance, `html.reduce-glass`), the system `prefers-reduced-transparency` setting and browsers without `backdrop-filter` all get opaque surfaces with the same layout. Text on glass must keep WCAG AA over the strongest glow, which is why light `--ink-muted` is `#4a5567`. Motion follows iOS/macOS: `ease-apple` (smooth ease-out) for things arriving and `ease-spring` (slight overshoot) for things moving to a new place; only transform and opacity animate, and everything is off under `prefers-reduced-motion`. Cards fade and rise in (`surface-card` / `surface-tile`, one after another inside a `stagger` parent), a new page rises into place (`page-enter`; never fade a parent of glass, it switches the blur off while animating), the active nav item is a `MovingPill` that glides between items, segmented choices use `SlidingPill`, panels and alerts use `animate-pop-in`, and theme switches cross-fade with View Transitions.
 

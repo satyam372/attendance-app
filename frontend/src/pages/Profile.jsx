@@ -1,12 +1,12 @@
 import clsx from "clsx";
-import { Camera, CircleCheck, KeyRound, LogOut, Monitor, Moon, Sun, Trash2 } from "lucide-react";
+import { CircleCheck, KeyRound, LogOut, Monitor, Moon, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { useAuth } from "../auth/AuthContext.jsx";
 import { ChangePasswordForm } from "../components/ChangePasswordForm.jsx";
+import { PhotoEditButton } from "../components/profile/PhotoEditButton.jsx";
 import { PhotoEditor } from "../components/profile/PhotoEditor.jsx";
 import { ErrorAlert } from "../components/ui/Alert.jsx";
-import { Avatar } from "../components/ui/Avatar.jsx";
 import { Button } from "../components/ui/Button.jsx";
 import { Card } from "../components/ui/Card.jsx";
 import { SlidingPill } from "../components/ui/SlidingPill.jsx";
@@ -34,14 +34,18 @@ export default function Profile() {
   const [photoNotice, setPhotoNotice] = useState("");
   const src = photoUrl(user);
 
-  function choosePhoto(event) {
-    const file = event.target.files?.[0];
-    event.target.value = ""; // so choosing the same file again still triggers a change
+  function choosePhoto(file) {
     setPhotoNotice("");
     removePhoto.reset();
     const error = photoFileError(file);
-    setPhotoError(file ? (error ?? "") : "");
-    if (file && !error) setPhotoFile(file);
+    setPhotoError(error ?? "");
+    if (!error) setPhotoFile(file);
+  }
+
+  function deletePhoto() {
+    setPhotoNotice("");
+    setPhotoError("");
+    removePhoto.mutate(undefined, { onSuccess: () => setPhotoNotice("Photo removed. Your initials show instead.") });
   }
 
   useEffect(() => {
@@ -52,9 +56,9 @@ export default function Profile() {
     <div className="flex flex-col gap-5">
       <h1 className="m-0 text-[28px] font-extrabold tracking-[-0.02em]">Profile</h1>
 
-      <Card aria-label="You" className="flex flex-col gap-5">
+      <Card aria-label="You" className="relative z-10 flex flex-col gap-5">
         <div className="flex items-center gap-4">
-          <Avatar name={user.name} src={src} className="size-20 text-2xl" />
+          <PhotoEditButton name={user.name} src={src} onChoose={choosePhoto} onRemove={deletePhoto} removing={removePhoto.isPending} />
           <div className="min-w-0">
             <p className="m-0 text-lg font-bold">{user.name}</p>
             <p className="m-0 truncate text-sm text-ink-muted">{user.email}</p>
@@ -72,28 +76,7 @@ export default function Profile() {
             }}
           />
         ) : (
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-wrap gap-2">
-              {/* The file input is the control; the label is styled as a button. On phones it offers the camera too. */}
-              <label className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-xl glass-button px-4 text-sm font-semibold text-ink transition active:scale-[0.98] motion-reduce:active:scale-100 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus">
-                <input type="file" accept="image/*" onChange={choosePhoto} className="sr-only" />
-                <Camera className="size-4" aria-hidden="true" />
-                {src ? "Change photo" : "Upload photo"}
-              </label>
-              {src && (
-                <Button
-                  variant="ghost"
-                  loading={removePhoto.isPending}
-                  onClick={() => {
-                    setPhotoNotice("");
-                    removePhoto.mutate(undefined, { onSuccess: () => setPhotoNotice("Photo removed. Your initials show instead.") });
-                  }}
-                >
-                  {!removePhoto.isPending && <Trash2 className="size-4" aria-hidden="true" />}
-                  Remove photo
-                </Button>
-              )}
-            </div>
+          <div className="flex flex-col gap-3 empty:hidden">
             <ErrorAlert>{photoError || removePhoto.error?.message}</ErrorAlert>
             {photoNotice && (
               <p role="status" className="motion-safe:animate-pop-in m-0 flex items-center gap-2 text-sm font-semibold text-success">

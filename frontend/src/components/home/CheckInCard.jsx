@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { Building2, House, Power } from "lucide-react";
+import { House, Power } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -10,15 +10,10 @@ import { LOCATION2_ENABLED, LOCATION2_HOLD_MS, location2 } from "../../lib/geolo
 import { ErrorAlert } from "../ui/Alert.jsx";
 import { Button } from "../ui/Button.jsx";
 import { Skeleton } from "../ui/Skeleton.jsx";
-import { SlidingPill } from "../ui/SlidingPill.jsx";
 import { TodayTimes } from "./TodayTimes.jsx";
+import { WorkModeSwitch } from "./WorkModeSwitch.jsx";
 
 const fmtDays = (n) => (Number.isInteger(n) ? String(n) : n.toFixed(1));
-
-const MODES = [
-  { value: WorkMode.OFFICE, label: "Office", icon: Building2 },
-  { value: WorkMode.WFH, label: "Home (WFH)", icon: House },
-];
 
 const MODE_TEXT = { [WorkMode.OFFICE]: "at office", [WorkMode.WFH]: "from home", [WorkMode.HYBRID]: "half from home" };
 
@@ -142,40 +137,22 @@ export function CheckInCard({ today, isLoading, isError, onRetry, now }) {
       </div>
 
       {phase === "in" && !presetMode && (
-        <fieldset className="m-0 w-full max-w-xs border-0 p-0">
-          <legend className="mb-2 w-full p-0 text-center text-[13px] font-medium text-ink-muted">Where are you working today?</legend>
-          <div className="relative grid grid-cols-2 gap-1 rounded-2xl surface-track p-1">
-            <SlidingPill index={MODES.findIndex((m) => m.value === mode)} count={MODES.length} />
-            {MODES.map(({ value, label, icon: Icon }) => (
-              <label
-                key={value}
-                className={clsx(
-                  "relative flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl text-sm font-semibold transition has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-focus",
-                  mode === value ? "text-accent-ink" : "text-ink-muted hover:text-ink",
-                )}
-              >
-                <input
-                  type="radio"
-                  name="work-mode"
-                  value={value}
-                  checked={mode === value}
-                  onChange={() => {
-                    setMode(value);
-                    checkIn.reset();
-                  }}
-                  className="sr-only"
-                />
-                <Icon className="size-4" aria-hidden="true" />
-                {label}
-              </label>
-            ))}
-          </div>
-          <p className={clsx("m-0 mt-2 text-center text-xs", wfhBlocked ? "font-medium text-late" : "text-ink-muted")}>
+        <div className="flex w-full max-w-xs flex-col items-center">
+          <p className="m-0 mb-3 text-center text-[13px] font-medium text-ink-muted">Where are you working today?</p>
+          <WorkModeSwitch
+            value={mode}
+            describedBy="wfh-usage"
+            onChange={(value) => {
+              setMode(value);
+              checkIn.reset();
+            }}
+          />
+          <p id="wfh-usage" className={clsx("m-0 mt-3 text-center text-xs", wfhBlocked ? "font-medium text-late" : "text-ink-muted")}>
             {wfhBlocked
               ? "You've used your free WFH days this month. Choose Office, or raise a WFH request."
               : `${fmtDays(today.wfh_used)} of ${today.wfh_free} free WFH days used this month`}
           </p>
-        </fieldset>
+        </div>
       )}
 
       <button

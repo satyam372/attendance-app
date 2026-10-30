@@ -1,13 +1,14 @@
 import clsx from "clsx";
 import { LogOut } from "lucide-react";
 import { useState } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useLocation } from "react-router-dom";
 
 import { useAuth } from "../../auth/AuthContext.jsx";
 import { ROLE_LABELS } from "../../lib/domain/enums.js";
 import { ThemeToggle } from "../ThemeToggle.jsx";
 import { Avatar } from "../ui/Avatar.jsx";
 import { Button } from "../ui/Button.jsx";
+import { MovingPill } from "../ui/MovingPill.jsx";
 import { Wordmark } from "../ui/Wordmark.jsx";
 import { itemsFor } from "./navItems.js";
 import { photoUrl } from "../../lib/services/profile.js";
@@ -16,6 +17,7 @@ import { photoUrl } from "../../lib/services/profile.js";
 export function Sidebar() {
   const { user, logout } = useAuth();
   const [signingOut, setSigningOut] = useState(false);
+  const { pathname } = useLocation();
 
   return (
     <aside className="sticky top-0 hidden h-dvh w-[17rem] shrink-0 p-3 lg:block">
@@ -24,7 +26,8 @@ export function Sidebar() {
         <Wordmark className="text-lg" />
       </Link>
 
-      <nav aria-label="Main" className="flex flex-col gap-1">
+      <nav aria-label="Main" className="relative flex flex-col gap-1">
+        <MovingPill group="sidebar" watch={pathname} className="rounded-xl" />
         {itemsFor(user.role).map(({ to, label, icon: Icon, end }) => (
           <NavLink
             key={to}
@@ -32,13 +35,17 @@ export function Sidebar() {
             end={end}
             className={({ isActive }) =>
               clsx(
-                "flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm transition",
-                isActive ? "surface-pill font-bold text-accent-ink" : "font-semibold text-ink-soft hover:bg-(--glass-hover) hover:text-ink",
+                "relative flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm transition duration-300 ease-spring active:scale-[0.97] motion-reduce:active:scale-100",
+                isActive ? "font-bold text-accent-ink" : "font-semibold text-ink-soft hover:bg-(--glass-hover) hover:text-ink",
               )
             }
           >
-            <Icon className="size-5" strokeWidth={2} aria-hidden="true" />
-            {label}
+            {({ isActive }) => (
+              <>
+                <Icon className={clsx("size-5", isActive && "motion-safe:animate-symbol-bounce")} strokeWidth={2} aria-hidden="true" />
+                {label}
+              </>
+            )}
           </NavLink>
         ))}
       </nav>

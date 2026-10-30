@@ -8,7 +8,7 @@ export function ErrorAlert({ children, className }) {
     <div
       role="alert"
       className={clsx(
-        "flex items-start gap-2.5 rounded-xl border border-danger/30 bg-danger-soft px-3.5 py-3 text-sm text-danger",
+        "flex items-start gap-2.5 rounded-xl border border-danger/30 bg-danger-soft px-3.5 py-3 text-sm text-danger motion-safe:animate-pop-in",
         className,
       )}
     >

@@ -149,7 +149,7 @@ export default function HrSheet() {
                   })}
                 </tr>
               </thead>
-              <tbody>
+              <tbody key={monday} className="motion-safe:animate-fade-in">
                 {rows.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-5 py-10 text-center text-sm text-ink-muted">

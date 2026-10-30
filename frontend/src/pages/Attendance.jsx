@@ -72,7 +72,7 @@ export default function Attendance() {
         </div>
       ) : (
         <>
-          <dl className="m-0 grid grid-cols-4 gap-2 lg:grid-cols-5 lg:gap-3.5" aria-label={`Summary for ${monthLabel(month)}`}>
+          <dl key={`${month.year}-${month.month}`} className="stagger m-0 grid grid-cols-4 gap-2 lg:grid-cols-5 lg:gap-3.5" aria-label={`Summary for ${monthLabel(month)}`}>
             {cards.map(({ label, value, category, tone, pcOnly }) => (
               // Only dt + dd inside each group (valid definition list); value above the label on phones
               <div
@@ -100,7 +100,9 @@ export default function Attendance() {
               {history.isLoading ? (
                 <Skeleton className="h-72 w-full" />
               ) : (
-                <MonthCalendar value={month} byDate={byDate} todayKey={todayKey} selected={selectedDay} onSelect={setSelected} />
+                <div key={`${month.year}-${month.month}`} className="motion-safe:animate-fade-in">
+                  <MonthCalendar value={month} byDate={byDate} todayKey={todayKey} selected={selectedDay} onSelect={setSelected} />
+                </div>
               )}
               {!history.isLoading && days.length === 0 && (
                 <p className="m-0 text-center text-sm text-ink-muted">Nothing recorded for {monthLabel(month)}.</p>

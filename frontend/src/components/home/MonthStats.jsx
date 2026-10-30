@@ -37,7 +37,7 @@ export function MonthStats({ today, className }) {
 
   return (
     <section aria-label="This month" className={className}>
-      <dl className="m-0 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <dl className="stagger m-0 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {stats.map(({ label, value, suffix, tone }) => (
           <div key={label} className="flex flex-col gap-1.5 rounded-[20px] surface-tile p-4.5">
             <dt className="text-[13px] font-semibold text-ink-muted">{label}</dt>

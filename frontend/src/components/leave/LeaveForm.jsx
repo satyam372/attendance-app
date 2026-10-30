@@ -88,7 +88,7 @@ export function LeaveForm() {
     const what = request.leave_category ? CATEGORY_LABELS[request.leave_category] : REQUEST_TYPE_LABELS[request.request_type];
     const dates = request.from_date === request.to_date ? shortDate(request.from_date) : `${shortDate(request.from_date)} – ${shortDate(request.to_date)}`;
     return (
-      <div role="status" className="flex flex-col items-center gap-3 py-6 text-center">
+      <div role="status" className="motion-safe:animate-pop-in flex flex-col items-center gap-3 py-6 text-center">
         <CircleCheck className="size-12 text-success" strokeWidth={1.6} aria-hidden="true" />
         <h3 className="m-0 text-lg font-bold">Request sent</h3>
         <p className="m-0 max-w-sm text-sm text-ink-soft">

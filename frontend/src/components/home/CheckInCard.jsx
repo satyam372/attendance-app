@@ -28,6 +28,9 @@ const MODE_TEXT = { [WorkMode.OFFICE]: "at office", [WorkMode.WFH]: "from home",
  */
 export function CheckInCard({ today, isLoading, isError, onRetry, now }) {
   const [mode, setMode] = useState(WorkMode.OFFICE);
+  // Increases after each successful check-in/out; keys the ring that ripples out from the button
+  const [success, setSuccess] = useState(0);
+  const celebrate = { onSuccess: () => setSuccess((n) => n + 1) };
   const checkIn = useCheckIn();
   const checkOut = useCheckOut();
   const clock = formatClock(now);
@@ -124,8 +127,8 @@ export function CheckInCard({ today, isLoading, isError, onRetry, now }) {
     location2On.current = false;
     checkIn.reset();
     checkOut.reset();
-    if (phase === "in") checkIn.mutate({ workMode: chosenMode, location });
-    else if (phase === "out") checkOut.mutate();
+    if (phase === "in") checkIn.mutate({ workMode: chosenMode, location }, celebrate);
+    else if (phase === "out") checkOut.mutate(undefined, celebrate);
   }
 
   return (
@@ -186,12 +189,16 @@ export function CheckInCard({ today, isLoading, isError, onRetry, now }) {
         aria-label={button.aria}
         aria-busy={pending || undefined}
         className={clsx(
-          "flex size-42 cursor-pointer flex-col select-none items-center justify-center gap-2 rounded-full border-[10px] transition duration-200 lg:size-40",
+          // Colours morph between phases; a press shrinks it and it springs back
+          "relative flex size-42 cursor-pointer flex-col select-none items-center justify-center gap-2 rounded-full border-[10px] transition-[background-color,border-color,color,scale,filter] duration-500 ease-apple active:scale-[0.95] active:duration-150 motion-reduce:active:scale-100 lg:size-40",
           "disabled:cursor-default disabled:hover:brightness-100",
           (wfhBlocked || pending) && "opacity-60",
           button.classes,
         )}
       >
+        {success > 0 && (
+          <span key={success} aria-hidden="true" className="pointer-events-none absolute -inset-3 rounded-full border-2 border-current opacity-0 motion-safe:animate-ring-out" />
+        )}
         <Power className={clsx("size-8.5", pending && "animate-pulse")} strokeWidth={2} aria-hidden="true" />
         <span className="text-[17px] font-bold">{checkIn.locating ? "Locating…" : pending ? "Saving…" : button.label}</span>
       </button>
@@ -215,7 +222,7 @@ export function CheckInCard({ today, isLoading, isError, onRetry, now }) {
               onClick={() => {
                 setMode(WorkMode.WFH);
                 checkIn.reset();
-                checkIn.mutate({ workMode: WorkMode.WFH });
+                checkIn.mutate({ workMode: WorkMode.WFH }, celebrate);
               }}
             >
               <House className="size-4" aria-hidden="true" />

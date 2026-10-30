@@ -62,7 +62,7 @@ export function AddEmployeeForm({ managers = [] }) {
 
   if (created) {
     return (
-      <div role="status" className="flex flex-col gap-3">
+      <div role="status" className="motion-safe:animate-pop-in flex flex-col gap-3">
         <p className="m-0 flex items-center gap-2 font-bold">
           <CircleCheck className="size-5 text-success" aria-hidden="true" />
           Account created for {created.employee.name}

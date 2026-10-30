@@ -84,7 +84,7 @@ export default function HrApprovals() {
         groups[tab].length === 0 ? (
           <p className="m-0 rounded-3xl surface-card py-10 text-center text-sm text-ink-muted">{EMPTY[tab]}</p>
         ) : (
-          <ul className="m-0 grid list-none gap-4 p-0 md:grid-cols-2 2xl:grid-cols-3">
+          <ul key={tab} className="stagger m-0 grid list-none gap-4 p-0 md:grid-cols-2 2xl:grid-cols-3">
             {groups[tab].map(({ request, mode, approver }) => (
               <PendingRequestCard key={request.id} request={request} closedHolidays={closed} mode={mode} approverName={approver} />
             ))}

@@ -49,6 +49,7 @@ class ApprovalStatus(StrEnum):
 class EmailKind(StrEnum):
     # Add a value here (plus a migration) for each new email the app sends
     CHECK_IN_REMINDER = "CHECK_IN_REMINDER"
+    WELCOME = "WELCOME"  # login details for a new account (or new ones, when HR resends)
 
 
 class EmailStatus(StrEnum):

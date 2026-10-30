@@ -155,7 +155,7 @@ What was asked for and the decision. Covers leave and WFH.
 
 ### email_log
 
-One row per email the app tried to send. The body is not stored (it can be rebuilt from the template, and some emails contain a temporary password).
+One row per email the app tried to send. The body is not stored (it can be rebuilt from the template, and some emails contain a temporary password). WELCOME rows (login details for a new account, or new ones when HR resends them) have no `work_date`, so the unique index never blocks a resend.
 
 | Field | Type | Rules |
 |---|---|---|
@@ -183,7 +183,7 @@ Unique on (employee_id, kind, work_date) **except FAILED rows** (partial index `
 | RequestType | FULL_LEAVE, HALF_DAY_LEAVE, HALF_LEAVE_HALF_WFH, HALF_WFH, FULL_WFH |
 | LeaveCategory | CASUAL, SICK, EARNED, OPTIONAL_HOLIDAY |
 | ApprovalStatus | PENDING, APPROVED, REJECTED |
-| EmailKind | CHECK_IN_REMINDER |
+| EmailKind | CHECK_IN_REMINDER, WELCOME |
 | EmailStatus | SENT, FAILED, SKIPPED |
 
 ## How a request maps to attendance

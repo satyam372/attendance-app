@@ -47,21 +47,35 @@ class Settings(BaseSettings):
     # would let a check-in with a 50 km accuracy pass from anywhere in the city
     office_max_accuracy_m: int = Field(default=500, gt=0)
 
-    # Email (Microsoft 365 SMTP: STARTTLS on port 587). Leave MAIL_USERNAME empty to disable
-    # sending: emails are then only logged, so local dev and tests never email anyone.
+    # Email. MAIL_PROVIDER picks how it goes out:
+    #   "resend": Resend's HTTPS API (RESEND_API_KEY, and MAIL_FROM on a domain verified in Resend)
+    #   "smtp":   any SMTP server with STARTTLS (MAIL_USERNAME / MAIL_PASSWORD)
+    # Until that provider's settings are filled in, sending is off: emails are only logged as
+    # SKIPPED, so local dev and tests never email anyone.
+    mail_provider: Literal["smtp", "resend"] = "smtp"
+    # Forces sending off whatever else is set; the tests use it (tests/conftest.py)
+    mail_disabled: bool = False
+    resend_api_key: SecretStr | None = None
     mail_server: str = "smtp.office365.com"
     mail_port: int = 587
     mail_username: str | None = None
     mail_password: SecretStr | None = None
-    # Microsoft 365 only accepts a From address the account may send as; defaults to MAIL_USERNAME
+    # The sender address. SMTP: defaults to MAIL_USERNAME (Microsoft 365 only accepts an address
+    # the account may send as). Resend: required, on the verified domain.
     mail_from: EmailStr | None = None
     mail_from_name: str = "SpeedIn Attendance"
+    # Where replies go, e.g. hr@ when MAIL_FROM is an address nobody reads
+    mail_reply_to: EmailStr | None = None
     mail_timeout_seconds: int = 10
     # Used for the link in emails
     app_url: str = "http://localhost:1234"
 
     @property
     def mail_enabled(self) -> bool:
+        if self.mail_disabled:
+            return False
+        if self.mail_provider == "resend":
+            return self.resend_api_key is not None and self.mail_from is not None
         return self.mail_username is not None
 
     @model_validator(mode="after")
@@ -71,8 +85,10 @@ class Settings(BaseSettings):
                 raise ValueError("JWT_SECRET must be at least 32 characters outside local")
             if not self.cookie_secure:
                 raise ValueError("COOKIE_SECURE must be true outside local")
-        if self.mail_username is not None and self.mail_password is None:
+        if self.mail_provider == "smtp" and self.mail_username is not None and self.mail_password is None:
             raise ValueError("MAIL_PASSWORD is required when MAIL_USERNAME is set")
+        if self.mail_provider == "resend" and self.resend_api_key is not None and self.mail_from is None:
+            raise ValueError("MAIL_FROM is required with MAIL_PROVIDER=resend")
         return self
 
 

@@ -1,5 +1,6 @@
 """Password hashing (bcrypt) and access tokens (JWT). Pure functions: no database, no HTTP."""
 
+import secrets
 import uuid
 from datetime import UTC, datetime, timedelta
 
@@ -11,6 +12,14 @@ from app.core.config import get_settings
 ALGORITHM = "HS256"
 COOKIE_NAME = "access_token"
 BCRYPT_MAX_BYTES = 72
+
+# Temporary passwords: no look-alike characters (0/O, 1/l/I), so one read from an email or
+# typed by hand still works. Same alphabet as frontend/src/lib/domain/password.js.
+TEMPORARY_PASSWORD_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789"
+
+
+def generate_temporary_password(length: int = 12) -> str:
+    return "".join(secrets.choice(TEMPORARY_PASSWORD_ALPHABET) for _ in range(length))
 
 
 def hash_password(password: str) -> str:

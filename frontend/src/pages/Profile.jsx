@@ -96,7 +96,7 @@ export default function Profile() {
             </div>
             <ErrorAlert>{photoError || removePhoto.error?.message}</ErrorAlert>
             {photoNotice && (
-              <p role="status" className="m-0 flex items-center gap-2 text-sm font-semibold text-success">
+              <p role="status" className="motion-safe:animate-pop-in m-0 flex items-center gap-2 text-sm font-semibold text-success">
                 <CircleCheck className="size-4" aria-hidden="true" />
                 {photoNotice}
               </p>
@@ -168,7 +168,7 @@ export default function Profile() {
           )}
         </div>
         {passwordPanel === "changed" && (
-          <p role="status" className="m-0 flex items-center gap-2 text-sm font-semibold text-success">
+          <p role="status" className="motion-safe:animate-pop-in m-0 flex items-center gap-2 text-sm font-semibold text-success">
             <CircleCheck className="size-4" aria-hidden="true" />
             Password changed. Use the new one next time you sign in.
           </p>

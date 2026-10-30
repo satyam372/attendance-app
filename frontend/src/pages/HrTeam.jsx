@@ -76,7 +76,7 @@ function PersonRow({ person, isMe, managerName, managers, panel, busy, onOpen, o
         </div>
       )}
       {panel === "deactivate" && (
-        <div role="group" aria-label={`Deactivate ${person.name}?`} className="order-last flex w-full flex-wrap items-center gap-x-3 gap-y-2 rounded-xl surface-inset px-3.5 py-2.5">
+        <div role="group" aria-label={`Deactivate ${person.name}?`} className="motion-safe:animate-pop-in order-last flex w-full flex-wrap items-center gap-x-3 gap-y-2 rounded-xl surface-inset px-3.5 py-2.5">
           <p className="m-0 min-w-0 flex-1 basis-52 text-sm text-ink-soft">
             Deactivate <strong className="text-ink">{person.name}</strong>? They can&rsquo;t sign in until you reactivate them. Their attendance history stays.
           </p>
@@ -97,7 +97,7 @@ function PersonRow({ person, isMe, managerName, managers, panel, busy, onOpen, o
             e.preventDefault();
             onSaveManager(person, managerId);
           }}
-          className="order-last flex w-full flex-wrap items-end gap-x-3 gap-y-2 rounded-xl surface-inset px-3.5 py-3"
+          className="order-last flex w-full flex-wrap items-end gap-x-3 gap-y-2 rounded-xl surface-inset px-3.5 py-3 motion-safe:animate-pop-in"
         >
           <SelectField label="Reports to" value={managerId} onChange={(e) => setManagerId(e.target.value)} className="min-w-0 flex-1 basis-52">
             {!managerId && <option value="">Choose a manager</option>}
@@ -197,7 +197,7 @@ export default function HrTeam() {
 
           <ErrorAlert>{update.error?.message}</ErrorAlert>
           {notice && (
-            <p ref={noticeRef} tabIndex={-1} role="status" className="m-0 rounded-xl surface-inset px-3.5 py-2.5 text-sm font-semibold text-ink-soft focus:outline-none">
+            <p ref={noticeRef} tabIndex={-1} role="status" className="motion-safe:animate-pop-in m-0 rounded-xl surface-inset px-3.5 py-2.5 text-sm font-semibold text-ink-soft focus:outline-none">
               {notice}
             </p>
           )}

@@ -70,7 +70,7 @@ export function ChangePasswordForm({ onSuccess, submitLabel = "Change password",
   const inputClassName = size === "lg" ? "short:h-12" : undefined;
 
   return (
-    <form noValidate onSubmit={handleSubmit} className="flex flex-col gap-5">
+    <form noValidate onSubmit={handleSubmit} className="flex flex-col gap-5 motion-safe:animate-pop-in">
       <ErrorAlert>{formError}</ErrorAlert>
       <div className="flex flex-col gap-4">
         <PasswordField label="Current password" autoComplete="current-password" inputClassName={inputClassName} {...field("current")} />

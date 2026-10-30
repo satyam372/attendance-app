@@ -1,4 +1,5 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { flushSync } from "react-dom";
 
 // Keep in sync with the inline script in index.html.
 const THEME_STORAGE_KEY = "speedin-theme";
@@ -24,6 +25,16 @@ function readReduceTransparency() {
   }
 }
 
+/**
+ * Runs a visual switch (theme, transparency) as a cross-fade where the browser supports View
+ * Transitions, like macOS switching appearance. Instant under reduced motion or without support.
+ */
+function crossFade(update) {
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (!document.startViewTransition || reduceMotion) return update();
+  document.startViewTransition(() => flushSync(update));
+}
+
 function systemPrefersDark() {
   return window.matchMedia("(prefers-color-scheme: dark)").matches;
 }
@@ -44,16 +55,17 @@ export function ThemeProvider({ children }) {
 
   const resolved = preference === "system" ? (systemDark ? "dark" : "light") : preference;
 
-  useEffect(() => {
+  // Layout effects so the class changes inside the cross-fade (flushSync runs them right away)
+  useLayoutEffect(() => {
     document.documentElement.classList.toggle("dark", resolved === "dark");
   }, [resolved]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     document.documentElement.classList.toggle("reduce-glass", reduceTransparency);
   }, [reduceTransparency]);
 
   const chooseReduceTransparency = useCallback((next) => {
-    setReduceTransparency(next);
+    crossFade(() => setReduceTransparency(next));
     try {
       localStorage.setItem(GLASS_STORAGE_KEY, next ? "1" : "0");
     } catch {
@@ -62,7 +74,7 @@ export function ThemeProvider({ children }) {
   }, []);
 
   const choose = useCallback((next) => {
-    setPreference(next);
+    crossFade(() => setPreference(next));
     try {
       localStorage.setItem(THEME_STORAGE_KEY, next);
     } catch {

@@ -114,7 +114,7 @@ export function PhotoEditor({ file, onCancel, onSaved }) {
   }
 
   return (
-    <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start sm:gap-6">
+    <div className="flex flex-col items-center gap-4 motion-safe:animate-pop-in sm:flex-row sm:items-start sm:gap-6">
       {image ? (
         <div
           tabIndex={0}

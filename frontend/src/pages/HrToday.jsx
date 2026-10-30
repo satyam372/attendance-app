@@ -1,4 +1,3 @@
-import clsx from "clsx";
 import { CalendarClock, ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -125,7 +124,7 @@ export default function HrToday() {
         </div>
       ) : (
         <>
-          <dl className="m-0 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5" aria-label="Counts">
+          <dl key={shownDay} className="stagger m-0 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5" aria-label="Counts">
             {summary.isLoading
               ? [0, 1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-22" />)
               : cards.map(({ label, value, note, category }) => (
@@ -158,7 +157,7 @@ export default function HrToday() {
                 return shown.length === 0 ? (
                   <p className="m-0 rounded-2xl surface-card py-8 text-center text-sm text-ink-muted">Nobody here.</p>
                 ) : (
-                  <ul className={clsx("m-0 grid list-none gap-3 p-0 sm:grid-cols-2 xl:grid-cols-3")}>
+                  <ul key={`${shownDay}:${filter}`} className="stagger m-0 grid list-none gap-3 p-0 sm:grid-cols-2 xl:grid-cols-3">
                     {shown.map((member) => (
                       <TeamMemberCard key={member.employee_id} member={member} now={now} isToday={isToday} />
                     ))}

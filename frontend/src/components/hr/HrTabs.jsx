@@ -6,6 +6,7 @@ import { useAuth } from "../../auth/AuthContext.jsx";
 import { useEmployees } from "../../hooks/useEmployees.js";
 import { useRequestList } from "../../hooks/useRequests.js";
 import { splitForHr } from "../../lib/domain/approvals.js";
+import { MovingPill } from "../ui/MovingPill.jsx";
 
 /**
  * Tabs across the HR pages. The bottom tab bar's "Team" tab covers all of them on phones,
@@ -44,8 +45,10 @@ export function HrTabs() {
     <nav
       ref={navRef}
       aria-label="HR"
-      className="-mb-1 flex gap-1 self-start overflow-x-auto rounded-2xl surface-control p-1 [scrollbar-width:none] max-sm:max-w-full"
+      className="relative -mb-1 flex gap-1 self-start overflow-x-auto rounded-2xl surface-control p-1 [scrollbar-width:none] max-sm:max-w-full"
     >
+      {/* Each HR page renders its own tabs; the pill remembers the last tab and glides from it */}
+      <MovingPill group="hr-tabs" watch={`${pathname}:${count}`} className="rounded-xl" />
       {tabs.map(({ to, label, short, end, badge }) => (
         <NavLink
           key={to}
@@ -53,8 +56,8 @@ export function HrTabs() {
           end={end}
           className={({ isActive }) =>
             clsx(
-              "flex min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl px-3 text-[13px] font-semibold whitespace-nowrap transition sm:px-4 sm:text-sm",
-              isActive ? "surface-pill text-accent-ink" : "text-ink-muted hover:text-ink",
+              "relative flex min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl px-3 text-[13px] font-semibold whitespace-nowrap transition duration-300 ease-spring active:scale-[0.96] motion-reduce:active:scale-100 sm:px-4 sm:text-sm",
+              isActive ? "text-accent-ink" : "text-ink-muted hover:text-ink",
             )
           }
         >

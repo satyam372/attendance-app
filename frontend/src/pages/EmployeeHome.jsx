@@ -53,7 +53,7 @@ export default function EmployeeHome() {
       </header>
 
       <div className="flex flex-col gap-5 lg:grid lg:grid-cols-[minmax(320px,380px)_1fr] lg:items-start">
-        <div className="flex flex-col gap-5">
+        <div className="stagger flex flex-col gap-5">
           <CheckInCard
             today={today.data}
             isLoading={today.isLoading}
@@ -64,7 +64,7 @@ export default function EmployeeHome() {
           {today.data && <TodayTimes attendance={today.data.attendance} now={now} className="lg:hidden" />}
         </div>
 
-        <div className="flex flex-col gap-5">
+        <div className="stagger flex flex-col gap-5">
           {/* Phones: this week (Home artboard). PC: this month (Desktop Dashboard artboard). */}
           <div className="lg:hidden">
             <HoursChart range="week" todayKey={todayKey} attendance={today.data?.attendance} now={now} />

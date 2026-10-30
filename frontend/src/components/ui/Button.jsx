@@ -24,7 +24,7 @@ export function Button({ variant = "primary", size = "md", loading = false, disa
       disabled={disabled || loading}
       aria-busy={loading || undefined}
       className={clsx(
-        "inline-flex cursor-pointer items-center justify-center gap-2 font-semibold transition duration-200 active:scale-[0.98] motion-reduce:active:scale-100",
+        "inline-flex cursor-pointer items-center justify-center gap-2 font-semibold transition duration-300 ease-spring active:scale-[0.97] motion-reduce:active:scale-100",
         "disabled:pointer-events-none disabled:opacity-60",
         VARIANTS[variant],
         SIZES[size],

@@ -42,7 +42,7 @@ function HolidayRow({ holiday, past, confirming, removing, onAskRemove, onConfir
         </Button>
       )}
       {confirming && (
-        <div role="group" aria-label={`Remove ${holiday.name}?`} className="flex w-full flex-wrap items-center gap-x-3 gap-y-2 rounded-xl surface-inset px-3.5 py-2.5">
+        <div role="group" aria-label={`Remove ${holiday.name}?`} className="motion-safe:animate-pop-in flex w-full flex-wrap items-center gap-x-3 gap-y-2 rounded-xl surface-inset px-3.5 py-2.5">
           <p className="m-0 min-w-0 flex-1 basis-48 text-sm text-ink-soft">
             Remove <strong className="text-ink">{holiday.name}</strong>?{" "}
             {holiday.is_optional ? "Employees can no longer request it." : "It becomes a working day again."}
@@ -163,7 +163,7 @@ export default function HrHolidays() {
                 </h2>
                 <ErrorAlert className="my-2">{setActive.error?.message}</ErrorAlert>
                 {removed && (
-                  <div role="status" className="my-2 flex flex-wrap items-center justify-between gap-2 rounded-xl surface-inset py-1.5 pr-1.5 pl-3.5 text-sm">
+                  <div role="status" className="motion-safe:animate-pop-in my-2 flex flex-wrap items-center justify-between gap-2 rounded-xl surface-inset py-1.5 pr-1.5 pl-3.5 text-sm">
                     <span className="min-w-0">
                       Removed <strong>{removed.name}</strong>.
                     </span>
@@ -227,7 +227,7 @@ export default function HrHolidays() {
             </label>
             <ErrorAlert>{createHoliday.error?.message}</ErrorAlert>
             {added && (
-              <p role="status" className="m-0 flex items-center gap-2 text-sm font-semibold text-success">
+              <p role="status" className="motion-safe:animate-pop-in m-0 flex items-center gap-2 text-sm font-semibold text-success">
                 <CircleCheck className="size-4.5" aria-hidden="true" />
                 Added {added.name}.
               </p>

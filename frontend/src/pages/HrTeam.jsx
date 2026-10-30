@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { Search, UserCog, UserX } from "lucide-react";
+import { Mail, Search, UserCog, UserX } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { useAuth } from "../auth/AuthContext.jsx";
@@ -10,7 +10,7 @@ import { Avatar } from "../components/ui/Avatar.jsx";
 import { Button } from "../components/ui/Button.jsx";
 import { SelectField } from "../components/ui/Fields.jsx";
 import { Skeleton } from "../components/ui/Skeleton.jsx";
-import { useEmployees, useUpdateEmployee } from "../hooks/useEmployees.js";
+import { useEmployees, useResendWelcomeEmail, useUpdateEmployee } from "../hooks/useEmployees.js";
 import { Role, ROLE_LABELS } from "../lib/domain/enums.js";
 
 const ROLE_CHIP = {
@@ -25,7 +25,7 @@ function approvalLine(person, managerName) {
   return managerName ? `Reports to ${managerName}` : null;
 }
 
-function PersonRow({ person, isMe, managerName, managers, panel, busy, onOpen, onClose, onDeactivate, onReactivate, onSaveManager }) {
+function PersonRow({ person, isMe, managerName, managers, panel, busy, sending, onOpen, onClose, onDeactivate, onReactivate, onSaveManager, onResend }) {
   const cancelRef = useRef(null);
   const [managerId, setManagerId] = useState(person.reports_to_id ?? "");
   const line = approvalLine(person, managerName);
@@ -59,6 +59,11 @@ function PersonRow({ person, isMe, managerName, managers, panel, busy, onOpen, o
       </div>
       {!isMe && !panel && (
         <div className="-mr-2 flex shrink-0">
+          {person.is_active && (
+            <Button variant="ghost" size="icon" aria-label={`Send login details to ${person.name}`} onClick={() => onOpen(person, "resend")}>
+              <Mail className="size-4.5" aria-hidden="true" />
+            </Button>
+          )}
           {person.is_active && person.role === Role.EMPLOYEE && (
             <Button variant="ghost" size="icon" aria-label={`Change ${person.name}'s manager`} onClick={() => onOpen(person, "manager")}>
               <UserCog className="size-4.5" aria-hidden="true" />
@@ -86,6 +91,22 @@ function PersonRow({ person, isMe, managerName, managers, panel, busy, onOpen, o
             </Button>
             <Button variant="danger" loading={busy} onClick={() => onDeactivate(person)}>
               {busy ? "Deactivating" : "Deactivate"}
+            </Button>
+          </div>
+        </div>
+      )}
+      {panel === "resend" && (
+        <div role="group" aria-label={`Send new login details to ${person.name}?`} className="motion-safe:animate-pop-in order-last flex w-full flex-wrap items-center gap-x-3 gap-y-2 rounded-xl surface-inset px-3.5 py-2.5">
+          <p className="m-0 min-w-0 flex-1 basis-52 text-sm text-ink-soft">
+            Send new login details to <strong className="text-ink">{person.name}</strong>? This sets a new temporary password and emails it to{" "}
+            <span className="break-all">{person.email}</span>. Their current password stops working.
+          </p>
+          <div className="flex gap-2">
+            <Button ref={cancelRef} variant="ghost" onClick={onClose} disabled={sending}>
+              Cancel
+            </Button>
+            <Button loading={sending} onClick={() => onResend(person)}>
+              {sending ? "Sending" : "Send"}
             </Button>
           </div>
         </div>
@@ -131,22 +152,36 @@ export default function HrTeam() {
   const employees = useEmployees();
   const { user } = useAuth();
   const update = useUpdateEmployee();
+  const resend = useResendWelcomeEmail();
   const [query, setQuery] = useState("");
-  const [open, setOpen] = useState(null); // { id, panel: "deactivate" | "manager" }
-  const [notice, setNotice] = useState("");
+  const [open, setOpen] = useState(null); // { id, panel: "deactivate" | "manager" | "resend" }
+  // { text, password? }: the password only when the login details could not be emailed
+  const [notice, setNotice] = useState(null);
   const noticeRef = useRef(null);
 
   function save(person, changes, message) {
-    setNotice("");
+    setNotice(null);
     update.mutate(
       { id: person.id, changes },
       {
         onSuccess: () => {
           setOpen(null);
-          setNotice(message);
+          setNotice({ text: message });
         },
       },
     );
+  }
+
+  function sendLogin(person) {
+    setNotice(null);
+    resend.mutate(person.id, {
+      onSuccess: ({ welcome_email: mail, temporary_password: password }) => {
+        setOpen(null);
+        if (mail === "SENT") return setNotice({ text: `New login details sent to ${person.email}.` });
+        const why = mail === "FAILED" ? "Couldn't send the email." : "Email sending is turned off.";
+        setNotice({ text: `${why} ${person.name}'s new temporary password is below; share it with them privately.`, password });
+      },
+    });
   }
 
   // The panel closes, so focus moves to the result message instead of being lost
@@ -195,11 +230,12 @@ export default function HrTeam() {
             </label>
           </div>
 
-          <ErrorAlert>{update.error?.message}</ErrorAlert>
+          <ErrorAlert>{update.error?.message || resend.error?.message}</ErrorAlert>
           {notice && (
-            <p ref={noticeRef} tabIndex={-1} role="status" className="motion-safe:animate-pop-in m-0 rounded-xl surface-inset px-3.5 py-2.5 text-sm font-semibold text-ink-soft focus:outline-none">
-              {notice}
-            </p>
+            <div ref={noticeRef} tabIndex={-1} role="status" className="motion-safe:animate-pop-in flex flex-col gap-1.5 rounded-xl surface-inset px-3.5 py-2.5 text-sm font-semibold text-ink-soft focus:outline-none">
+              <p className="m-0">{notice.text}</p>
+              {notice.password && <p className="m-0 font-mono text-base text-ink">{notice.password}</p>}
+            </div>
           )}
           {employees.isError ? (
             <div className="flex flex-col gap-3">
@@ -223,14 +259,17 @@ export default function HrTeam() {
                   managers={managers}
                   panel={open?.id === person.id ? open.panel : null}
                   busy={update.isPending && update.variables?.id === person.id}
+                  sending={resend.isPending && resend.variables === person.id}
                   onOpen={(p, panel) => {
                     update.reset();
-                    setNotice("");
+                    resend.reset();
+                    setNotice(null);
                     setOpen({ id: p.id, panel });
                   }}
                   onClose={() => setOpen(null)}
                   onDeactivate={(p) => save(p, { is_active: false }, `${p.name} is deactivated and can no longer sign in.`)}
                   onReactivate={(p) => save(p, { is_active: true }, `${p.name} can sign in again.`)}
+                  onResend={sendLogin}
                   onSaveManager={(p, managerId) =>
                     save(p, { reports_to_id: managerId }, `${p.name} now reports to ${byId.get(managerId)?.name}. Their requests go to them.`)
                   }

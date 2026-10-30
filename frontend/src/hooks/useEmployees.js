@@ -56,3 +56,12 @@ export function useUpdateEmployee() {
     },
   });
 }
+
+/** Send the login details again (a new temporary password); the people list refreshes. */
+export function useResendWelcomeEmail() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: employees.resendWelcomeEmail,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["employees"] }),
+  });
+}

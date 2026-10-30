@@ -9,7 +9,10 @@ export function listEmployees() {
   return apiFetch("/employees");
 }
 
-/** POST /employees (HR) with { name, email, role, reports_to_id, password } → 201 EmployeePublic. 409 if the email exists. */
+/**
+ * POST /employees (HR) with { name, email, role, reports_to_id, password, send_welcome_email } →
+ * 201 EmployeePublic + welcome_email ("SENT" | "FAILED" | "SKIPPED" | null). 409 if the email exists.
+ */
 export function createEmployee(body) {
   if (USE_MOCK_API) return mock.createEmployee(body);
   return apiFetch("/employees", { method: "POST", body });
@@ -34,4 +37,13 @@ export function setHolidayActive(id, isActive) {
 export function updateEmployee(id, changes) {
   if (USE_MOCK_API) return mock.updateEmployee(id, changes);
   return apiFetch(`/employees/${id}`, { method: "PATCH", body: changes });
+}
+
+/**
+ * POST /employees/{id}/welcome-email (HR): sets a new temporary password and emails the login
+ * details → { welcome_email, temporary_password }. 409 for a deactivated account or your own.
+ */
+export function resendWelcomeEmail(id) {
+  if (USE_MOCK_API) return mock.resendWelcomeEmail(id);
+  return apiFetch(`/employees/${id}/welcome-email`, { method: "POST" });
 }

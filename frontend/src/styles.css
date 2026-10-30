@@ -93,6 +93,7 @@
   --glass-tile: rgb(255 255 255 / 0.74);
   --glass-chrome: rgb(255 255 255 / 0.56);
   --glass-sheet: rgb(255 255 255 / 0.72);
+  --glass-menu: rgb(255 255 255 / 0.97); /* menus float over text (and inside glass cards, where blur is weaker), so nearly solid */
   --glass-control: rgb(255 255 255 / 0.55);
   --glass-control-hover: rgb(255 255 255 / 0.78);
   --glass-hover: rgb(255 255 255 / 0.5);
@@ -107,6 +108,14 @@
   --glass-shadow-lg: 0 2px 6px rgb(46 29 92 / 0.06), 0 24px 60px rgb(46 29 92 / 0.14);
   --glass-blur: blur(16px) saturate(170%);
   --glass-blur-strong: blur(26px) saturate(185%);
+
+  /* Liquid Glass switch: the clear lens knob (a bright rim and highlight, slightly magnifying) */
+  --lens-shine: rgb(255 255 255 / 0.8);
+  --lens-body: rgb(255 255 255 / 0.16);
+  --lens-rim: rgb(255 255 255 / 0.85);
+  --lens-depth: rgb(46 29 92 / 0.12);
+  --lens-shadow: 0 14px 30px rgb(46 29 92 / 0.22), 0 3px 8px rgb(46 29 92 / 0.14);
+  --lens-blur: blur(2px) saturate(180%) brightness(1.06);
 }
 
 .dark {
@@ -194,6 +203,7 @@
   --glass-tile: rgb(30 24 64 / 0.66);
   --glass-chrome: rgb(26 21 56 / 0.5);
   --glass-sheet: rgb(24 19 52 / 0.66);
+  --glass-menu: rgb(28 22 60 / 0.97);
   --glass-control: rgb(255 255 255 / 0.07);
   --glass-control-hover: rgb(255 255 255 / 0.13);
   --glass-hover: rgb(255 255 255 / 0.07);
@@ -206,43 +216,53 @@
   --glass-highlight: inset 0 1px 0 rgb(255 255 255 / 0.14);
   --glass-shadow: 0 1px 2px rgb(0 0 0 / 0.25), 0 12px 32px rgb(0 0 0 / 0.3);
   --glass-shadow-lg: 0 2px 6px rgb(0 0 0 / 0.3), 0 28px 70px rgb(0 0 0 / 0.45);
+
+  --lens-shine: rgb(255 255 255 / 0.32);
+  --lens-body: rgb(255 255 255 / 0.05);
+  --lens-rim: rgb(255 255 255 / 0.3);
+  --lens-depth: rgb(0 0 0 / 0.35);
+  --lens-shadow: 0 14px 30px rgb(0 0 0 / 0.5), 0 3px 8px rgb(0 0 0 / 0.35);
 }
 
 /* Reduce transparency: the system setting, the in-app switch (html.reduce-glass) and browsers
    without backdrop-filter get opaque surfaces with the same layout. */
 html.reduce-glass {
-    --glass-card: #ffffff; --glass-tile: #ffffff; --glass-chrome: #ffffff; --glass-sheet: #ffffff; --glass-control: #ffffff;
+  --lens-body: rgb(255 255 255 / 0.9); --lens-blur: none;
+    --glass-card: #ffffff; --glass-tile: #ffffff; --glass-chrome: #ffffff; --glass-sheet: #ffffff; --glass-menu: #ffffff; --glass-control: #ffffff;
     --glass-control-hover: #f8fafc; --glass-hover: #f1f5f9; --glass-pill: #ffffff; --glass-track: #eef0f3;
     --glass-inset: #f4f2f9; --glass-field: #ffffff; --glass-border: #e2e8f0;
     --glass-blur: none; --glass-blur-strong: none;
 }
 html.reduce-glass.dark {
-    --glass-card: #141030; --glass-tile: #141030; --glass-chrome: #120e2c; --glass-sheet: #141030; --glass-control: #1b1638;
+  --lens-body: #231d45;
+    --glass-card: #141030; --glass-tile: #141030; --glass-chrome: #120e2c; --glass-sheet: #141030; --glass-menu: #141030; --glass-control: #1b1638;
     --glass-control-hover: #231d45; --glass-hover: #1b1638; --glass-pill: #2a2350; --glass-track: #0c0a1e;
     --glass-inset: #1b1638; --glass-field: #19152f; --glass-border: rgb(255 255 255 / 0.1);
 }
 @media (prefers-reduced-transparency: reduce) {
   :root {
-    --glass-card: #ffffff; --glass-tile: #ffffff; --glass-chrome: #ffffff; --glass-sheet: #ffffff; --glass-control: #ffffff;
+    --lens-body: rgb(255 255 255 / 0.9); --lens-blur: none;
+    --glass-card: #ffffff; --glass-tile: #ffffff; --glass-chrome: #ffffff; --glass-sheet: #ffffff; --glass-menu: #ffffff; --glass-control: #ffffff;
     --glass-control-hover: #f8fafc; --glass-hover: #f1f5f9; --glass-pill: #ffffff; --glass-track: #eef0f3;
     --glass-inset: #f4f2f9; --glass-field: #ffffff; --glass-border: #e2e8f0;
     --glass-blur: none; --glass-blur-strong: none;
   }
   :root.dark {
-    --glass-card: #141030; --glass-tile: #141030; --glass-chrome: #120e2c; --glass-sheet: #141030; --glass-control: #1b1638;
+    --lens-body: #231d45;
+    --glass-card: #141030; --glass-tile: #141030; --glass-chrome: #120e2c; --glass-sheet: #141030; --glass-menu: #141030; --glass-control: #1b1638;
     --glass-control-hover: #231d45; --glass-hover: #1b1638; --glass-pill: #2a2350; --glass-track: #0c0a1e;
     --glass-inset: #1b1638; --glass-field: #19152f; --glass-border: rgb(255 255 255 / 0.1);
   }
 }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   :root {
-    --glass-card: #ffffff; --glass-tile: #ffffff; --glass-chrome: #ffffff; --glass-sheet: #ffffff; --glass-control: #ffffff;
+    --glass-card: #ffffff; --glass-tile: #ffffff; --glass-chrome: #ffffff; --glass-sheet: #ffffff; --glass-menu: #ffffff; --glass-control: #ffffff;
     --glass-control-hover: #f8fafc; --glass-hover: #f1f5f9; --glass-pill: #ffffff; --glass-track: #eef0f3;
     --glass-inset: #f4f2f9; --glass-field: #ffffff; --glass-border: #e2e8f0;
     --glass-blur: none; --glass-blur-strong: none;
   }
   :root.dark {
-    --glass-card: #141030; --glass-tile: #141030; --glass-chrome: #120e2c; --glass-sheet: #141030; --glass-control: #1b1638;
+    --glass-card: #141030; --glass-tile: #141030; --glass-chrome: #120e2c; --glass-sheet: #141030; --glass-menu: #141030; --glass-control: #1b1638;
     --glass-control-hover: #231d45; --glass-hover: #1b1638; --glass-pill: #2a2350; --glass-track: #0c0a1e;
     --glass-inset: #1b1638; --glass-field: #19152f; --glass-border: rgb(255 255 255 / 0.1);
   }
@@ -407,6 +427,12 @@ html:not(.dark) .theme-app {
   --animate-symbol-bounce: symbol-bounce 0.5s var(--ease-spring);
   --animate-ring-out: ring-out 0.9s var(--ease-apple) both;
 
+  --animate-lens-squish: lens-squish 0.5s var(--ease-spring);
+
+  @keyframes lens-squish {
+    0%, 100% { scale: 1; }
+    40% { scale: 1.16 0.88; }
+  }
   @keyframes page-rise {
     from { transform: translateY(10px); }
     to { transform: none; }
@@ -520,6 +546,16 @@ html:not(.dark) .theme-app {
   backdrop-filter: var(--glass-blur-strong);
 }
 
+/* Pop-up menus: dense glass, because they float over text that must not show through */
+@utility glass-menu {
+  border-width: 1px;
+  border-color: var(--glass-border);
+  background-color: var(--glass-menu);
+  box-shadow: var(--glass-highlight), var(--glass-shadow-lg);
+  -webkit-backdrop-filter: var(--glass-blur-strong);
+  backdrop-filter: var(--glass-blur-strong);
+}
+
 /* Secondary buttons and other glass pills */
 @utility glass-button {
   border-width: 1px;
@@ -536,6 +572,28 @@ html:not(.dark) .theme-app {
 /* Inputs: translucent but not blurred, so typing stays fast and text stays crisp */
 @utility glass-field {
   background-color: var(--glass-field);
+}
+
+/* Liquid Glass switch (Office / Home): a raised glass track */
+@utility glass-switch-track {
+  border-width: 1px;
+  border-color: var(--glass-border);
+  background-color: var(--glass-control);
+  box-shadow: inset 0 2px 6px var(--glass-edge), var(--glass-highlight), var(--glass-shadow);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+}
+
+/* ... and a clear glass lens as the knob: bright rim, a shine at the top left, depth at the bottom */
+@utility glass-lens {
+  border: 1px solid var(--lens-rim);
+  background:
+    radial-gradient(90% 70% at 30% 18%, var(--lens-shine), transparent 55%),
+    radial-gradient(80% 60% at 70% 100%, var(--lens-depth), transparent 70%),
+    var(--lens-body);
+  box-shadow: inset 0 1px 1px var(--lens-rim), inset 0 -6px 12px var(--lens-depth), var(--lens-shadow);
+  -webkit-backdrop-filter: var(--lens-blur);
+  backdrop-filter: var(--lens-blur);
 }
 
 /* App background: brand glows the glass sits on (purple, teal, lavender, sky). Sized to the

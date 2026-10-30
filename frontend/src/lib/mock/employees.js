@@ -1,5 +1,6 @@
 import { ApiError } from "../api.js";
 import { Role } from "../domain/enums.js";
+import { generateTemporaryPassword } from "../domain/password.js";
 import { currentEmployee } from "./auth.js";
 import { delay, getDb, publicEmployee, saveDb } from "./db.js";
 import { uuid } from "./uuid.js";
@@ -22,6 +23,23 @@ export async function listEmployees() {
 }
 
 /** POST /employees with EmployeeCreate → 201 EmployeePublic (must_change_password true). */
+// Mock of the welcome email (backend services/welcome.py). Like email_log, the outbox keeps who and
+// when, never the password. The result can be switched to see the other screens:
+// localStorage.setItem("speedin-mock-mail", "FAILED" | "SKIPPED"), "SENT" by default.
+function mailResult() {
+  try {
+    return localStorage.getItem("speedin-mock-mail") || "SENT";
+  } catch {
+    return "SENT";
+  }
+}
+
+function sendWelcome(db, employee) {
+  const status = mailResult();
+  db.outbox = [...(db.outbox ?? []), { to: employee.email, kind: "WELCOME", status, at: new Date().toISOString() }];
+  return status;
+}
+
 export async function createEmployee(body) {
   await delay(450);
   requireHr();
@@ -48,8 +66,27 @@ export async function createEmployee(body) {
     password: body.password, // mock only: lets the new account sign in with the temporary password
   };
   db.employees.push(employee);
+  // POST /employees: send_welcome_email defaults to true; null when not asked
+  const welcome = body.send_welcome_email === false ? null : sendWelcome(db, employee);
   saveDb();
-  return publicEmployee(employee);
+  return { ...publicEmployee(employee), welcome_email: welcome };
+}
+
+/** POST /employees/{id}/welcome-email: a new temporary password, emailed. Same refusals as the backend. */
+export async function resendWelcomeEmail(id) {
+  await delay(600);
+  requireHr();
+  const db = getDb();
+  const employee = db.employees.find((e) => e.id === id);
+  if (!employee) throw new ApiError(404, "Employee not found");
+  if (employee.id === currentEmployee().id) throw new ApiError(409, "Use Change password for your own account.");
+  if (!employee.is_active) throw new ApiError(409, "This account is deactivated.");
+  const password = generateTemporaryPassword();
+  employee.password = password;
+  employee.must_change_password = true;
+  const welcome = sendWelcome(db, employee);
+  saveDb();
+  return { welcome_email: welcome, temporary_password: password };
 }
 
 /** POST /holidays with HolidayCreate → 201 HolidayPublic. */

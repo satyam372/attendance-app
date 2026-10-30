@@ -1,4 +1,4 @@
-import { CircleCheck, Copy, RefreshCw } from "lucide-react";
+import { CircleAlert, CircleCheck, Copy, Mail, RefreshCw } from "lucide-react";
 import { useState } from "react";
 
 import { useCreateEmployee } from "../../hooks/useEmployees.js";
@@ -10,11 +10,13 @@ import { SelectField } from "../ui/Fields.jsx";
 import { TextField } from "../ui/TextField.jsx";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const emptyForm = () => ({ name: "", email: "", role: Role.EMPLOYEE, reportsTo: "", password: generateTemporaryPassword() });
+const emptyForm = () => ({ name: "", email: "", role: Role.EMPLOYEE, reportsTo: "", password: generateTemporaryPassword(), sendEmail: true });
 
 /**
  * HR adds an employee with a temporary password → POST /api/employees. Employees must report to a
  * manager (`managers`: active MANAGER accounts), because their manager approves their requests.
+ * The login details are emailed to them by default (welcome_email: SENT, FAILED or SKIPPED when
+ * sending is off); when the email did not go out, HR shares them by hand.
  */
 export function AddEmployeeForm({ managers = [] }) {
   const createEmployee = useCreateEmployee();
@@ -22,6 +24,7 @@ export function AddEmployeeForm({ managers = [] }) {
   const [errors, setErrors] = useState({});
   const [created, setCreated] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
 
   const update = (changes) => {
     setForm((current) => ({ ...current, ...changes }));
@@ -46,6 +49,7 @@ export function AddEmployeeForm({ managers = [] }) {
       // Managers' and HR's requests go to HR, so only employees need a manager
       reports_to_id: form.role === Role.EMPLOYEE ? form.reportsTo : null,
       password: form.password,
+      send_welcome_email: form.sendEmail,
     };
     createEmployee.mutate(body, { onSuccess: (employee) => setCreated({ employee, password: form.password }) });
   }
@@ -61,29 +65,63 @@ export function AddEmployeeForm({ managers = [] }) {
   }
 
   if (created) {
+    const mail = created.employee.welcome_email;
+    const sent = mail === "SENT";
+    // Without an email that went out, HR must see the details to share them by hand
+    const detailsVisible = !sent || showDetails;
     return (
       <div role="status" className="motion-safe:animate-pop-in flex flex-col gap-3">
         <p className="m-0 flex items-center gap-2 font-bold">
           <CircleCheck className="size-5 text-success" aria-hidden="true" />
           Account created for {created.employee.name}
         </p>
-        <p className="m-0 text-sm text-ink-soft">Share these details with them privately (not in a group chat). They&rsquo;ll be asked to change the password.</p>
-        <dl className="m-0 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 rounded-xl surface-inset px-4 py-3 text-sm">
-          <dt className="text-ink-muted">Email</dt>
-          <dd className="m-0 font-semibold break-all">{created.employee.email}</dd>
-          <dt className="text-ink-muted">Temporary password</dt>
-          <dd className="m-0 font-mono font-semibold">{created.password}</dd>
-        </dl>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="secondary" onClick={copyDetails}>
-            <Copy className="size-4" aria-hidden="true" />
-            {copied ? "Copied" : "Copy details"}
+        {sent ? (
+          <p className="m-0 flex items-start gap-2 text-sm text-ink-soft">
+            <Mail className="mt-0.5 size-4 shrink-0 text-success" aria-hidden="true" />
+            <span>
+              Login details sent to <strong className="break-all text-ink">{created.employee.email}</strong>. They&rsquo;ll be asked to choose their own password
+              when they first sign in.
+            </span>
+          </p>
+        ) : (
+          <p className={`m-0 flex items-start gap-2 text-sm ${mail === "FAILED" ? "font-medium text-late" : "text-ink-soft"}`}>
+            {mail === "FAILED" && <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />}
+            <span>
+              {mail === "FAILED"
+                ? "Couldn't send the email. "
+                : mail === "SKIPPED"
+                  ? "Email sending is turned off, so nothing was sent. "
+                  : ""}
+              Share these details with them privately (not in a group chat). They&rsquo;ll be asked to change the password.
+            </span>
+          </p>
+        )}
+        {sent && (
+          <Button variant="ghost" aria-expanded={showDetails} onClick={() => setShowDetails((v) => !v)} className="self-start">
+            {showDetails ? "Hide login details" : "Show login details"}
           </Button>
+        )}
+        {detailsVisible && (
+          <dl className="m-0 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 rounded-xl surface-inset px-4 py-3 text-sm motion-safe:animate-pop-in">
+            <dt className="text-ink-muted">Email</dt>
+            <dd className="m-0 font-semibold break-all">{created.employee.email}</dd>
+            <dt className="text-ink-muted">Temporary password</dt>
+            <dd className="m-0 font-mono font-semibold">{created.password}</dd>
+          </dl>
+        )}
+        <div className="flex flex-wrap gap-2">
+          {detailsVisible && (
+            <Button variant="secondary" onClick={copyDetails}>
+              <Copy className="size-4" aria-hidden="true" />
+              {copied ? "Copied" : "Copy details"}
+            </Button>
+          )}
           <Button
             variant="ghost"
             onClick={() => {
               setCreated(null);
               setCopied(false);
+              setShowDetails(false);
               setForm(emptyForm());
             }}
           >
@@ -155,6 +193,18 @@ export function AddEmployeeForm({ managers = [] }) {
           </button>
         }
       />
+      <label className="flex cursor-pointer items-start gap-3 rounded-xl surface-inset px-3.5 py-3 text-sm">
+        <input
+          type="checkbox"
+          checked={form.sendEmail}
+          onChange={(e) => update({ sendEmail: e.target.checked })}
+          className="mt-0.5 size-4.5 shrink-0 accent-accent"
+        />
+        <span>
+          <span className="block font-semibold text-ink">Email the login details</span>
+          <span className="block text-xs text-ink-muted">They get the app link, their email and this temporary password.</span>
+        </span>
+      </label>
       <ErrorAlert>{createEmployee.error?.message}</ErrorAlert>
       <Button type="submit" size="lg" loading={createEmployee.isPending}>
         {createEmployee.isPending ? "Adding" : "Add employee"}
